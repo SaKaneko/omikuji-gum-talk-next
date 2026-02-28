@@ -42,7 +42,7 @@ export function DrawMachine() {
           setState("idle");
         }
       });
-    }, 1500);
+    }, 3000);
   }, [filterType, filterMinDuration, filterMaxDuration]);
 
   const handleStartPresentation = useCallback(() => {
@@ -185,19 +185,14 @@ export function DrawMachine() {
 
       {/* Drawing animation */}
       {state === "drawing" && (
-        <div className="card text-center py-16">
-          <div className="text-6xl mb-6 animate-bounce-slow">🎰</div>
-          <div className="text-xl font-bold text-gray-600 animate-pulse">
+        <div className="fixed inset-0 z-50 bg-black/80 flex flex-col items-center justify-center">
+          <img
+            src="/images/omikuji.gif"
+            alt="おみくじ抽選中"
+            className="absolute inset-0 w-full h-full object-contain"
+          />
+          <div className="relative z-10 mt-auto mb-16 text-3xl font-bold text-white animate-pulse drop-shadow-lg">
             抽選中...
-          </div>
-          <div className="mt-4 flex justify-center gap-2">
-            {[0, 1, 2].map((i) => (
-              <div
-                key={i}
-                className="w-3 h-3 bg-primary-500 rounded-full animate-bounce"
-                style={{ animationDelay: `${i * 0.2}s` }}
-              />
-            ))}
           </div>
         </div>
       )}
