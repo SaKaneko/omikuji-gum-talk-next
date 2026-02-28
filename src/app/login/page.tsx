@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { login } from "@/actions/auth";
 
 export default function LoginPage() {
@@ -11,9 +12,15 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center px-4">
       <div className="card w-full max-w-md animate-fade-in">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-primary-600 to-accent-600 bg-clip-text text-transparent">
-            🎯 おだいボックス
-          </h1>
+          <div className="flex justify-center mb-4">
+            <Image
+              src="/images/title.png"
+              alt="ガムトーク"
+              width={280}
+              height={105}
+              priority
+            />
+          </div>
           <p className="text-gray-500 mt-2">ログインしてください</p>
         </div>
 

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { getCurrentUser } from "@/lib/auth";
 
 export default async function HomePage() {
@@ -46,9 +47,15 @@ export default async function HomePage() {
   return (
     <div className="max-w-2xl mx-auto">
       <div className="text-center mb-10">
-        <h1 className="text-4xl font-bold mb-3 bg-gradient-to-r from-primary-600 to-accent-600 bg-clip-text text-transparent">
-          ガムトーク
-        </h1>
+        <div className="flex justify-center mb-4">
+          <Image
+            src="/images/title.png"
+            alt="ガムトーク"
+            width={320}
+            height={120}
+            priority
+          />
+        </div>
         <p className="text-gray-500 text-lg">
           ライトニングトーク会の おだいボックス
         </p>
