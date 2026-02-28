@@ -284,7 +284,7 @@ export function DrawMachine() {
             <div className="text-5xl mb-4">
               {drawnTheme.type === "SOLO" ? "🎤" : "💬"}
             </div>
-            <h2 className="text-xl font-bold text-gray-800 mb-2 text-left">
+            <h2 className="text-xl font-bold text-gray-800 mb-2">
               {drawnTheme.subject}
             </h2>
             <p className="text-gray-600 whitespace-pre-wrap mb-4 text-left">
