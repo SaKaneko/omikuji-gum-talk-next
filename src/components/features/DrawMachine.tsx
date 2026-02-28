@@ -84,6 +84,20 @@ export function DrawMachine() {
     [drawnTheme]
   );
 
+  const handleSubmitCompleteWithoutRecording = useCallback(() => {
+    if (!drawnTheme) return;
+    startTransition(async () => {
+      const result = await passTheme(drawnTheme.id);
+      if (result.success) {
+        setDrawnTheme(null);
+        setState("idle");
+        setActualDuration(0);
+      } else {
+        setError(result.error || "完了処理に失敗しました。");
+      }
+    });
+  }, [drawnTheme]);
+
   const handlePass = useCallback(() => {
     if (!drawnTheme) return;
     if (!confirm("このお題をパスして引き直しますか？")) return;
@@ -274,11 +288,10 @@ export function DrawMachine() {
             <h2 className="text-xl font-bold text-gray-800 mb-2">
               {drawnTheme.subject}
             </h2>
+            <p className="text-gray-600 whitespace-pre-wrap mb-4">
+              {drawnTheme.content}
+            </p>
             <p className="text-gray-500 text-sm mb-6">発表中...</p>
-            <div className="inline-flex items-center gap-2 bg-green-100 text-green-700 px-4 py-2 rounded-full">
-              <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-              <span className="text-sm font-medium">タイマー作動中</span>
-            </div>
           </div>
 
           <div className="text-center">
@@ -329,13 +342,22 @@ export function DrawMachine() {
                 タイマー計測値が初期値にセットされています
               </p>
             </div>
-            <button
-              onClick={() => handleSubmitComplete(actualDuration)}
-              disabled={isPending || actualDuration <= 0}
-              className="btn-primary w-full"
-            >
-              {isPending ? "記録中..." : "📊 記録して完了"}
-            </button>
+            <div className="flex flex-col gap-3 mt-4">
+              <button
+                onClick={() => handleSubmitComplete(actualDuration)}
+                disabled={isPending || actualDuration <= 0}
+                className="btn-primary w-full"
+              >
+                {isPending ? "記録中..." : "📊 記録して完了"}
+              </button>
+              <button
+                onClick={handleSubmitCompleteWithoutRecording}
+                disabled={isPending}
+                className="btn-secondary w-full"
+              >
+                {isPending ? "処理中..." : "⏭️ 記録せずに完了"}
+              </button>
+            </div>
           </div>
         </div>
       )}

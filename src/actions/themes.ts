@@ -235,6 +235,33 @@ export async function completeTheme(
   return { success: true };
 }
 
+export async function completeThemeWithoutRecording(id: string): Promise<ActionResult> {
+  const user = await getCurrentUser();
+  if (!user) {
+    return { success: false, error: "ログインが必要です。" };
+  }
+
+  const theme = await prisma.theme.findUnique({
+    where: { id },
+  });
+
+  if (!theme) {
+    return { success: false, error: "お題が見つかりません。" };
+  }
+
+  // Update theme to mark as used without recording actual duration
+  await prisma.theme.update({
+    where: { id },
+    data: {
+      isUsed: true,
+    },
+  });
+
+  revalidatePath("/themes");
+  revalidatePath("/draw");
+  return { success: true };
+}
+
 export async function getThemes(): Promise<ThemeWithAuthor[]> {
   const themes = await prisma.theme.findMany({
     include: {
