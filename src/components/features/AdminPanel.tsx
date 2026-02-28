@@ -128,6 +128,21 @@ export function AdminPanel({ users, themes }: AdminPanelProps) {
       {/* Themes management */}
       {activeTab === "themes" && (
         <div className="space-y-3">
+          {(() => {
+            const unusedThemes = themes.filter((t) => !t.isUsed);
+            const totalCorrectedDuration = unusedThemes.reduce((sum, t) => {
+              return sum + t.expectedDuration * Math.exp(t.author.timeBiasCoefficient);
+            }, 0);
+            return (
+              <div className="card bg-amber-50 border border-amber-200">
+                <p className="text-sm text-amber-800">
+                  📊 未消化のお題: <span className="font-bold">{unusedThemes.length}件</span>
+                  {" · "}
+                  補正後の合計所要時間: <span className="font-bold">{totalCorrectedDuration.toFixed(1)}分</span>
+                </p>
+              </div>
+            );
+          })()}
           {themes.length === 0 ? (
             <div className="card text-center py-8 text-gray-400">
               お題がありません
