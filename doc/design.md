@@ -150,6 +150,8 @@ Next.js App Router の機能を活用し、クライアントからの操作は 
 必要に応じて以下のエンドポイントを実装する。基本的には Server Actions で完結させる方針とする。
 
 - `GET /api/me`: 現在のログインユーザー情報取得 (Client Component初期化用など)
+- `GET /api/themes/remaining`: 未消化のお題統計情報取得（認証不要）
+  - レスポンス: `{ count: number, totalExpectedDuration: number, totalCorrectedDuration: number }`
 
 ### 3.3 認証機構 (Authentication Mechanism)
 
