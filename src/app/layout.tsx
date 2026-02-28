@@ -4,6 +4,9 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "ガムトーク おだいボックス",
   description: "ライトニングトーク会用お題箱アプリケーション",
+  icons: {
+    icon: "/favicon.ico",
+  },
 };
 
 export default function RootLayout({
