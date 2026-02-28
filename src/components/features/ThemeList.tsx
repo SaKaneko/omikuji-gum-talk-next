@@ -21,7 +21,7 @@ export function ThemeList({
   canDeleteOthers,
   isAdmin,
 }: ThemeListProps) {
-  const [filter, setFilter] = useState<FilterStatus>("all");
+  const [filter, setFilter] = useState<FilterStatus>("unused");
   const [isPending, startTransition] = useTransition();
 
   const filteredThemes = themes.filter((theme) => {

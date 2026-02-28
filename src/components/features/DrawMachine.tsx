@@ -215,18 +215,20 @@ export function DrawMachine() {
                 <h2 className="text-2xl font-bold text-gray-800 mb-3">
                   {drawnTheme.subject}
                 </h2>
-                <p className="text-gray-600 whitespace-pre-wrap mb-4">
+                <p className="text-gray-600 whitespace-pre-wrap mb-4 text-left">
                   {drawnTheme.content}
                 </p>
-                <p className="text-sm text-gray-500">
-                  投稿者:{" "}
-                  {drawnTheme.author.deletedAt
-                    ? "削除されたユーザー"
-                    : drawnTheme.author.name}
-                </p>
-                <p className="text-xs text-gray-400 mt-1">
-                  予想: {drawnTheme.expectedDuration}分
-                </p>
+                <div className="text-left mt-6">
+                  <p className="text-sm text-gray-500">
+                    投稿者:{" "}
+                    {drawnTheme.author.deletedAt
+                      ? "削除されたユーザー"
+                      : drawnTheme.author.name}
+                  </p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    予想: {drawnTheme.expectedDuration}分
+                  </p>
+                </div>
               </div>
             ) : (
               // GROUP bubble effect
@@ -237,20 +239,22 @@ export function DrawMachine() {
                   {drawnTheme.subject}
                 </h2>
                 <div className="bg-green-50 rounded-2xl p-4 mb-4 relative">
-                  <p className="text-gray-600 whitespace-pre-wrap">
+                  <p className="text-gray-600 whitespace-pre-wrap text-left">
                     {drawnTheme.content}
                   </p>
                   <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-green-50 rotate-45" />
                 </div>
-                <p className="text-sm text-gray-500">
-                  投稿者:{" "}
-                  {drawnTheme.author.deletedAt
-                    ? "削除されたユーザー"
-                    : drawnTheme.author.name}
-                </p>
-                <p className="text-xs text-gray-400 mt-1">
-                  予想: {drawnTheme.expectedDuration}分
-                </p>
+                <div className="text-left mt-6">
+                  <p className="text-sm text-gray-500">
+                    投稿者:{" "}
+                    {drawnTheme.author.deletedAt
+                      ? "削除されたユーザー"
+                      : drawnTheme.author.name}
+                  </p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    予想: {drawnTheme.expectedDuration}分
+                  </p>
+                </div>
               </div>
             )}
           </div>
@@ -280,10 +284,10 @@ export function DrawMachine() {
             <div className="text-5xl mb-4">
               {drawnTheme.type === "SOLO" ? "🎤" : "💬"}
             </div>
-            <h2 className="text-xl font-bold text-gray-800 mb-2">
+            <h2 className="text-xl font-bold text-gray-800 mb-2 text-left">
               {drawnTheme.subject}
             </h2>
-            <p className="text-gray-600 whitespace-pre-wrap mb-4">
+            <p className="text-gray-600 whitespace-pre-wrap mb-4 text-left">
               {drawnTheme.content}
             </p>
             <p className="text-gray-500 text-sm mb-6">発表中...</p>
