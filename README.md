@@ -50,7 +50,7 @@ cp .env.example .env
 | :--------------------- | :----------------------------- | :-------------------------------- |
 | `DATABASE_URL`         | PostgreSQL 接続文字列          | (docker-compose 用のデフォルト値) |
 | `JWT_SECRET`           | JWT 署名用シークレットキー     | `your-super-secret-...`（要変更） |
-| `NEXT_PUBLIC_APP_NAME` | アプリ表示名                   | `ガムトーク おだいボックス`       |
+| `NEXT_PUBLIC_APP_NAME` | アプリ表示名                   | `おだいボックス`                  |
 | `ALPHA_LEARNING_RATE`  | ズレ係数の学習率 α             | `0.2`                             |
 | `MIN_ACTUAL_DURATION`  | 実績時間の最小クリップ値（分） | `0.1`                             |
 

@@ -12,7 +12,7 @@ export default function RegisterPage() {
       <div className="card w-full max-w-md animate-fade-in">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold bg-gradient-to-r from-primary-600 to-accent-600 bg-clip-text text-transparent">
-            🎯 おだいボックス
+            {process.env.NEXT_PUBLIC_APP_NAME ?? "おだいボックス"}
           </h1>
           <p className="text-gray-500 mt-2">新しいアカウントを作成</p>
         </div>

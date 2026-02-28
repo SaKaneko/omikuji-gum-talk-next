@@ -57,7 +57,7 @@ export default async function HomePage() {
           />
         </div>
         <p className="text-gray-500 text-lg">
-          ライトニングトーク会の おだいボックス
+          {process.env.NEXT_PUBLIC_APP_NAME ?? "おだいボックス"}
         </p>
       </div>
 

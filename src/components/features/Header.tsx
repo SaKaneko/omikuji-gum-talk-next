@@ -32,7 +32,7 @@ export function Header({ user }: HeaderProps) {
             href="/"
             className="text-xl font-bold bg-gradient-to-r from-primary-600 to-accent-600 bg-clip-text text-transparent"
           >
-            🎯 おだいボックス
+            {process.env.NEXT_PUBLIC_APP_NAME ?? "おだいボックス"}
           </Link>
 
           <nav className="hidden md:flex items-center gap-1">

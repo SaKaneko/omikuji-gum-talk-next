@@ -19,7 +19,7 @@ export default async function MainLayout({
         {children}
       </main>
       <footer className="text-center py-4 text-gray-400 text-sm">
-        ガムトーク おだいボックス
+        {process.env.NEXT_PUBLIC_APP_NAME ?? "おだいボックス"}
       </footer>
     </div>
   );
