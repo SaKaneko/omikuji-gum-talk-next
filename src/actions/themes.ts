@@ -1,0 +1,254 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { prisma } from "@/lib/prisma";
+import { getCurrentUser, hasPermission } from "@/lib/auth";
+import { ActionResult, ThemeFormData, DrawFilters, ThemeWithAuthor } from "@/types";
+import { Prisma } from "@prisma/client";
+
+export async function postTheme(data: ThemeFormData): Promise<ActionResult> {
+  const user = await getCurrentUser();
+  if (!user) {
+    return { success: false, error: "ログインが必要です。" };
+  }
+
+  if (!data.subject || !data.content) {
+    return { success: false, error: "件名と本文を入力してください。" };
+  }
+
+  if (data.expectedDuration <= 0) {
+    return { success: false, error: "予想所要時間は正の数を入力してください。" };
+  }
+
+  await prisma.theme.create({
+    data: {
+      subject: data.subject,
+      content: data.content,
+      type: data.type,
+      expectedDuration: data.expectedDuration,
+      authorId: user.id,
+    },
+  });
+
+  revalidatePath("/themes");
+  return { success: true };
+}
+
+export async function deleteTheme(id: string): Promise<ActionResult> {
+  const user = await getCurrentUser();
+  if (!user) {
+    return { success: false, error: "ログインが必要です。" };
+  }
+
+  const theme = await prisma.theme.findUnique({ where: { id } });
+  if (!theme) {
+    return { success: false, error: "お題が見つかりません。" };
+  }
+
+  // Check: own post or has delete_others_posts permission
+  if (theme.authorId !== user.id && !hasPermission(user, "delete_others_posts")) {
+    return { success: false, error: "この操作を行う権限がありません。" };
+  }
+
+  await prisma.theme.delete({ where: { id } });
+  revalidatePath("/themes");
+  return { success: true };
+}
+
+export async function updateThemeStatus(
+  id: string,
+  isUsed: boolean
+): Promise<ActionResult> {
+  const user = await getCurrentUser();
+  if (!user) {
+    return { success: false, error: "ログインが必要です。" };
+  }
+
+  // Admin only for manual status change
+  if (user.roleName !== "admin") {
+    return { success: false, error: "管理者のみ実行できます。" };
+  }
+
+  await prisma.theme.update({
+    where: { id },
+    data: { isUsed },
+  });
+
+  revalidatePath("/themes");
+  return { success: true };
+}
+
+export async function drawOmikuji(
+  filters: DrawFilters
+): Promise<{ success: boolean; theme?: ThemeWithAuthor; error?: string }> {
+  const user = await getCurrentUser();
+  if (!user) {
+    return { success: false, error: "ログインが必要です。" };
+  }
+
+  if (!hasPermission(user, "draw_omikuji")) {
+    return { success: false, error: "くじ引きの権限がありません。" };
+  }
+
+  try {
+    // Use interactive transaction with raw query for row-level locking
+    const result = await prisma.$transaction(async (tx) => {
+      // Build WHERE conditions
+      const conditions: string[] = ["is_used = false"];
+      const params: (string | number)[] = [];
+      let paramIndex = 1;
+
+      if (filters.type) {
+        conditions.push(`type = $${paramIndex}::\"ThemeType\"`);
+        params.push(filters.type);
+        paramIndex++;
+      }
+      if (filters.minDuration !== undefined && filters.minDuration > 0) {
+        conditions.push(`expected_duration >= $${paramIndex}`);
+        params.push(filters.minDuration);
+        paramIndex++;
+      }
+      if (filters.maxDuration !== undefined && filters.maxDuration > 0) {
+        conditions.push(`expected_duration <= $${paramIndex}`);
+        params.push(filters.maxDuration);
+        paramIndex++;
+      }
+
+      const whereClause = conditions.join(" AND ");
+
+      // SELECT with FOR UPDATE SKIP LOCKED for exclusive access
+      const themes = await tx.$queryRawUnsafe<Array<{ id: string }>>(
+        `SELECT id FROM themes WHERE ${whereClause} ORDER BY RANDOM() LIMIT 1 FOR UPDATE SKIP LOCKED`,
+        ...params
+      );
+
+      if (themes.length === 0) {
+        return null;
+      }
+
+      // Mark as used
+      await tx.theme.update({
+        where: { id: themes[0].id },
+        data: { isUsed: true },
+      });
+
+      // Return full theme data
+      return tx.theme.findUnique({
+        where: { id: themes[0].id },
+        include: {
+          author: {
+            select: {
+              id: true,
+              name: true,
+              timeBiasCoefficient: true,
+              deletedAt: true,
+            },
+          },
+        },
+      });
+    }, {
+      isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+    });
+
+    if (!result) {
+      return { success: false, error: "抽選可能なお題がありません。" };
+    }
+
+    return { success: true, theme: result as ThemeWithAuthor };
+  } catch (error) {
+    console.error("Draw error:", error);
+    return { success: false, error: "抽選中にエラーが発生しました。もう一度お試しください。" };
+  }
+}
+
+export async function passTheme(id: string): Promise<ActionResult> {
+  const user = await getCurrentUser();
+  if (!user) {
+    return { success: false, error: "ログインが必要です。" };
+  }
+
+  if (!hasPermission(user, "draw_omikuji")) {
+    return { success: false, error: "権限がありません。" };
+  }
+
+  await prisma.theme.update({
+    where: { id },
+    data: { isUsed: false },
+  });
+
+  revalidatePath("/draw");
+  return { success: true };
+}
+
+export async function completeTheme(
+  id: string,
+  actualDuration: number
+): Promise<ActionResult> {
+  const user = await getCurrentUser();
+  if (!user) {
+    return { success: false, error: "ログインが必要です。" };
+  }
+
+  const alpha = parseFloat(process.env.ALPHA_LEARNING_RATE || "0.2");
+  const minDuration = parseFloat(process.env.MIN_ACTUAL_DURATION || "0.1");
+
+  // Clip actual duration to minimum
+  const clippedActual = Math.max(actualDuration, minDuration);
+
+  const theme = await prisma.theme.findUnique({
+    where: { id },
+    include: {
+      author: {
+        select: { id: true, timeBiasCoefficient: true },
+      },
+    },
+  });
+
+  if (!theme) {
+    return { success: false, error: "お題が見つかりません。" };
+  }
+
+  // Update theme with actual duration
+  await prisma.theme.update({
+    where: { id },
+    data: {
+      actualDuration: Math.round(clippedActual),
+      isUsed: true,
+    },
+  });
+
+  // Update time bias coefficient if values are valid
+  if (theme.expectedDuration > 0 && clippedActual > 0) {
+    const kOld = theme.author.timeBiasCoefficient;
+    const kNew =
+      (1 - alpha) * kOld +
+      alpha * (Math.log(clippedActual) - Math.log(theme.expectedDuration));
+
+    await prisma.user.update({
+      where: { id: theme.author.id },
+      data: { timeBiasCoefficient: kNew },
+    });
+  }
+
+  revalidatePath("/themes");
+  revalidatePath("/draw");
+  return { success: true };
+}
+
+export async function getThemes(): Promise<ThemeWithAuthor[]> {
+  const themes = await prisma.theme.findMany({
+    include: {
+      author: {
+        select: {
+          id: true,
+          name: true,
+          timeBiasCoefficient: true,
+          deletedAt: true,
+        },
+      },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  return themes as ThemeWithAuthor[];
+}

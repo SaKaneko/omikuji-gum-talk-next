@@ -1,0 +1,39 @@
+version: "3.8"
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgresql://omikuji:omikuji_password@db:5432/omikuji_db?schema=public
+      - JWT_SECRET=${JWT_SECRET:-your-super-secret-jwt-key-change-in-production}
+      - NEXT_PUBLIC_APP_NAME=${NEXT_PUBLIC_APP_NAME:-ガムトーク おだいボックス}
+      - ALPHA_LEARNING_RATE=${ALPHA_LEARNING_RATE:-0.2}
+      - MIN_ACTUAL_DURATION=${MIN_ACTUAL_DURATION:-0.1}
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: omikuji
+      POSTGRES_PASSWORD: omikuji_password
+      POSTGRES_DB: omikuji_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U omikuji -d omikuji_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

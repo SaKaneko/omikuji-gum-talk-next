@@ -1,0 +1,37 @@
+import { ThemeType } from "@prisma/client";
+
+export interface ActionResult {
+  success: boolean;
+  error?: string;
+}
+
+export interface ThemeFormData {
+  subject: string;
+  content: string;
+  type: ThemeType;
+  expectedDuration: number;
+}
+
+export interface DrawFilters {
+  type?: ThemeType;
+  minDuration?: number;
+  maxDuration?: number;
+}
+
+export interface ThemeWithAuthor {
+  id: string;
+  subject: string;
+  content: string;
+  type: ThemeType;
+  expectedDuration: number;
+  actualDuration: number | null;
+  isUsed: boolean;
+  createdAt: Date;
+  authorId: string;
+  author: {
+    id: string;
+    name: string;
+    timeBiasCoefficient: number;
+    deletedAt: Date | null;
+  };
+}

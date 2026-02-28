@@ -1,0 +1,78 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                   String    @id @default(uuid())
+  name                 String
+  roleId               String    @map("role_id")
+  timeBiasCoefficient  Float     @default(0.0) @map("time_bias_coefficient")
+  passwordHash         String    @map("password_hash")
+  salt                 String
+  deletedAt            DateTime? @map("deleted_at")
+
+  role   Role    @relation(fields: [roleId], references: [id])
+  themes Theme[]
+
+  @@map("users")
+}
+
+model Role {
+  id   String @id @default(uuid())
+  name String @unique
+
+  users           User[]
+  rolePermissions RolePermission[]
+
+  @@map("roles")
+}
+
+model Permission {
+  id          String  @id @default(uuid())
+  slug        String  @unique
+  description String?
+
+  rolePermissions RolePermission[]
+
+  @@map("permissions")
+}
+
+model RolePermission {
+  roleId       String @map("role_id")
+  permissionId String @map("permission_id")
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+enum ThemeType {
+  SOLO
+  GROUP
+}
+
+model Theme {
+  id               String    @id @default(uuid())
+  subject          String
+  content          String
+  type             ThemeType @default(SOLO)
+  expectedDuration Int       @map("expected_duration")
+  actualDuration   Int?      @map("actual_duration")
+  isUsed           Boolean   @default(false) @map("is_used")
+  authorId         String    @map("author_id")
+  createdAt        DateTime  @default(now()) @map("created_at")
+
+  author User @relation(fields: [authorId], references: [id])
+
+  @@map("themes")
+}
