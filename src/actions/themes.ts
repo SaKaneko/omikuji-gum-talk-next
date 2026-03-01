@@ -126,12 +126,6 @@ export async function drawOmikuji(
         return null;
       }
 
-      // Mark as used
-      await tx.theme.update({
-        where: { id: themes[0].id },
-        data: { isUsed: true },
-      });
-
       // Return full theme data
       return tx.theme.findUnique({
         where: { id: themes[0].id },
@@ -229,33 +223,6 @@ export async function completeTheme(
       data: { timeBiasCoefficient: kNew },
     });
   }
-
-  revalidatePath("/themes");
-  revalidatePath("/draw");
-  return { success: true };
-}
-
-export async function completeThemeWithoutRecording(id: string): Promise<ActionResult> {
-  const user = await getCurrentUser();
-  if (!user) {
-    return { success: false, error: "ログインが必要です。" };
-  }
-
-  const theme = await prisma.theme.findUnique({
-    where: { id },
-  });
-
-  if (!theme) {
-    return { success: false, error: "お題が見つかりません。" };
-  }
-
-  // Update theme to mark as used without recording actual duration
-  await prisma.theme.update({
-    where: { id },
-    data: {
-      isUsed: true,
-    },
-  });
 
   revalidatePath("/themes");
   revalidatePath("/draw");
