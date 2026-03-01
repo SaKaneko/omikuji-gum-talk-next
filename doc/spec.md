@@ -7,6 +7,31 @@
 
 ## 2. 実装技術 (Technical Stack)
 
+```mermaid
+flowchart LR
+    User([User])
+
+    subgraph Docker["Docker Compose Environment"]
+        subgraph NextJS["Next.js Container"]
+            Frontend["Frontend\n(React, Tailwind CSS)"]
+            Backend["Backend\n(Server Actions, API Routes)"]
+            Prisma["Prisma ORM"]
+
+            Frontend <--> Backend
+            Backend <--> Prisma
+        end
+
+        subgraph DB["PostgreSQL Container"]
+            Postgres[(PostgreSQL)]
+        end
+
+        Prisma <-->|TCP/IP| Postgres
+    end
+
+    User <-->|HTTP/HTTPS| Frontend
+    ExternalServices([External Services\nOBS, Dashboard, etc.]) -.->|"GET /api/themes/remaining"| Backend
+```
+
 - **Framework**: Next.js (App Router) - FrontendとBackend APIを統合管理
 - **Routing**: Next.js File-system Routing
 - **Language**: TypeScript
