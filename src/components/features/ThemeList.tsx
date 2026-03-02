@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { ThemeWithAuthor } from "@/types";
 import { deleteTheme, updateThemeStatus } from "@/actions/themes";
+import { getThemeDisplay } from "@/lib/themeDisplay";
 
 interface ThemeListProps {
   themes: ThemeWithAuthor[];
@@ -96,20 +97,8 @@ export function ThemeList({
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-2 flex-wrap">
-                      <span
-                        className={
-                          theme.type === "LIGHTNING_TALK"
-                            ? "badge-lightning"
-                            : theme.type === "PRESENTATION"
-                            ? "badge-presentation"
-                            : "badge-group-talk"
-                        }
-                      >
-                        {theme.type === "LIGHTNING_TALK"
-                          ? "⚡️ LT"
-                          : theme.type === "PRESENTATION"
-                          ? "🎤 PRESENTATION"
-                          : "💬 GROUP TALK"}
+                      <span className={getThemeDisplay(theme.type).badgeClass}>
+                        {getThemeDisplay(theme.type).longLabel}
                       </span>
                       <span
                         className={
