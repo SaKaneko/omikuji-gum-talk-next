@@ -9,7 +9,7 @@ export default function PostPage() {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
-  const [type, setType] = useState<ThemeType>("SOLO");
+  const [type, setType] = useState<ThemeType>("LIGHTNING_TALK");
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -25,6 +25,11 @@ export default function PostPage() {
 
     if (!expectedDuration || expectedDuration <= 0) {
       setError("予想所要時間は正の数を入力してください。");
+      return;
+    }
+
+    if (type === "LIGHTNING_TALK" && expectedDuration > 10) {
+      setError("ライトニングトークの場合は10分以内で設定してください。");
       return;
     }
 
@@ -90,29 +95,42 @@ export default function PostPage() {
           <div className="flex gap-3">
             <button
               type="button"
-              onClick={() => setType("SOLO")}
-              className={`flex-1 p-4 rounded-xl border-2 transition-all ${
-                type === "SOLO"
+              onClick={() => setType("LIGHTNING_TALK")}
+              className={`flex-1 p-3 rounded-xl border-2 transition-all ${
+                type === "LIGHTNING_TALK"
+                  ? "border-yellow-500 bg-yellow-50 shadow-md"
+                  : "border-gray-200 bg-white hover:border-gray-300"
+              }`}
+            >
+              <div className="text-2xl mb-1">⚡️</div>
+              <div className="font-semibold text-sm">LT</div>
+              <div className="text-[10px] text-gray-500 mt-1">10分以内</div>
+            </button>
+            <button
+              type="button"
+              onClick={() => setType("PRESENTATION")}
+              className={`flex-1 p-3 rounded-xl border-2 transition-all ${
+                type === "PRESENTATION"
                   ? "border-blue-500 bg-blue-50 shadow-md"
                   : "border-gray-200 bg-white hover:border-gray-300"
               }`}
             >
               <div className="text-2xl mb-1">🎤</div>
-              <div className="font-semibold text-sm">SOLO</div>
-              <div className="text-xs text-gray-500">1人が発表</div>
+              <div className="font-semibold text-sm">PRESENTATION</div>
+              <div className="text-[10px] text-gray-500 mt-1">1人が発表</div>
             </button>
             <button
               type="button"
-              onClick={() => setType("GROUP")}
-              className={`flex-1 p-4 rounded-xl border-2 transition-all ${
-                type === "GROUP"
+              onClick={() => setType("GROUP_TALK")}
+              className={`flex-1 p-3 rounded-xl border-2 transition-all ${
+                type === "GROUP_TALK"
                   ? "border-green-500 bg-green-50 shadow-md"
                   : "border-gray-200 bg-white hover:border-gray-300"
               }`}
             >
               <div className="text-2xl mb-1">💬</div>
-              <div className="font-semibold text-sm">GROUP</div>
-              <div className="text-xs text-gray-500">みんなで話す</div>
+              <div className="font-semibold text-sm">GROUP TALK</div>
+              <div className="text-[10px] text-gray-500 mt-1">みんなで話す</div>
             </button>
           </div>
         </div>
@@ -127,12 +145,12 @@ export default function PostPage() {
             type="number"
             required
             min={1}
-            max={60}
+            max={type === "LIGHTNING_TALK" ? 10 : 60}
             defaultValue={5}
             className="input-field w-32"
           />
           <p className="text-xs text-gray-400 mt-1">
-            1〜60分の範囲で入力してください
+            {type === "LIGHTNING_TALK" ? "1〜10分の範囲で入力してください" : "1〜60分の範囲で入力してください"}
           </p>
         </div>
 

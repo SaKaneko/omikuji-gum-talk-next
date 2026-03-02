@@ -4,6 +4,7 @@ import { useState, useRef, useCallback, useTransition } from "react";
 import { ThemeType } from "@prisma/client";
 import { ThemeWithAuthor, DrawFilters } from "@/types";
 import { drawOmikuji, drawOldestTheme, passTheme, completeTheme } from "@/actions/themes";
+import { getThemeDisplay } from "@/lib/themeDisplay";
 
 type DrawState = "idle" | "drawing" | "result" | "presenting" | "completed";
 
@@ -164,8 +165,9 @@ export function DrawMachine() {
                   className="input-field text-sm"
                 >
                   <option value="">すべて</option>
-                  <option value="SOLO">🎤 SOLO</option>
-                  <option value="GROUP">💬 GROUP</option>
+                  <option value="LIGHTNING_TALK">{getThemeDisplay("LIGHTNING_TALK").label}</option>
+                  <option value="PRESENTATION">{getThemeDisplay("PRESENTATION").label}</option>
+                  <option value="GROUP_TALK">{getThemeDisplay("GROUP_TALK").label}</option>
                 </select>
               </div>
               <div>
@@ -235,16 +237,21 @@ export function DrawMachine() {
         <div className="space-y-4">
           <div
             className={`card ${
-              drawnTheme.type === "SOLO"
+              drawnTheme.type === "LIGHTNING_TALK"
                 ? "animate-spotlight border-2 border-amber-300"
+                : drawnTheme.type === "PRESENTATION"
+                ? "animate-lecture border-2 border-purple-300"
                 : "border-2 border-green-300"
             }`}
           >
-            {drawnTheme.type === "SOLO" ? (
-              // SOLO spotlight effect
+            {drawnTheme.type === "LIGHTNING_TALK" ? (
               <div className="text-center animate-fade-in">
-                <div className="text-5xl mb-4">🎤✨</div>
-                <div className="badge-solo text-sm mb-3">SOLO</div>
+                <div className="text-5xl mb-4">
+                  {getThemeDisplay(drawnTheme.type).emoji}✨
+                </div>
+                <div className={`${getThemeDisplay(drawnTheme.type).badgeClass} text-sm mb-3`}>
+                  {getThemeDisplay(drawnTheme.type).label}
+                </div>
                 <h2 className="text-2xl font-bold text-gray-800 mb-3">
                   {drawnTheme.subject}
                 </h2>
@@ -263,11 +270,36 @@ export function DrawMachine() {
                   </p>
                 </div>
               </div>
+            ) : drawnTheme.type === "PRESENTATION" ? (
+              <div className="text-center">
+                <div className="text-5xl mb-4">🎓📊🎤</div>
+                <div className={`${getThemeDisplay("PRESENTATION").badgeClass} text-sm mb-3`}>
+                  {getThemeDisplay("PRESENTATION").label}
+                </div>
+                <h2 className="text-2xl font-bold text-gray-800 mb-3">
+                  {drawnTheme.subject}
+                </h2>
+                <div className="bg-purple-50 border-l-4 border-purple-400 rounded-r-xl p-4 mb-4">
+                  <p className="text-gray-700 whitespace-pre-wrap text-left">
+                    {drawnTheme.content}
+                  </p>
+                </div>
+                <div className="text-left mt-6">
+                  <p className="text-sm text-gray-500">
+                    投稿者:{" "}
+                    {drawnTheme.author.deletedAt
+                      ? "削除されたユーザー"
+                      : drawnTheme.author.name}
+                  </p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    予想: {drawnTheme.expectedDuration}分
+                  </p>
+                </div>
+              </div>
             ) : (
-              // GROUP bubble effect
               <div className="text-center animate-bubble">
                 <div className="text-5xl mb-4">💬🗣️💬</div>
-                <div className="badge-group text-sm mb-3">GROUP</div>
+                <div className={`${getThemeDisplay("GROUP_TALK").badgeClass} text-sm mb-3`}>{getThemeDisplay("GROUP_TALK").label}</div>
                 <h2 className="text-2xl font-bold text-gray-800 mb-3">
                   {drawnTheme.subject}
                 </h2>
@@ -315,7 +347,7 @@ export function DrawMachine() {
         <div className="space-y-4">
           <div className="card text-center">
             <div className="text-5xl mb-4">
-              {drawnTheme.type === "SOLO" ? "🎤" : "💬"}
+              {getThemeDisplay(drawnTheme.type).emoji}
             </div>
             <h2 className="text-xl font-bold text-gray-800 mb-2">
               {drawnTheme.subject}
