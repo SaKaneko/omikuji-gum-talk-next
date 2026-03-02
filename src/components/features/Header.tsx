@@ -53,12 +53,19 @@ export function Header({ user }: HeaderProps) {
           </nav>
 
           <div className="flex items-center gap-3">
-            <span className="text-sm text-gray-600">
+            <Link
+              href="/settings"
+              className={`text-sm transition-colors ${
+                pathname === "/settings"
+                  ? "text-primary-700 font-medium"
+                  : "text-gray-600 hover:text-primary-600 hover:underline"
+              }`}
+            >
               👤 {user.name}
               {user.roleName === "admin" && (
                 <span className="ml-1 badge bg-purple-100 text-purple-700">Admin</span>
               )}
-            </span>
+            </Link>
             <form action={logout}>
               <button
                 type="submit"
