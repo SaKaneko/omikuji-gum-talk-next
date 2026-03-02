@@ -13,10 +13,21 @@ export async function changePassword(
   _prevState: ActionResult | null,
   formData: FormData
 ): Promise<ActionResult> {
-  const currentPassword = formData.get("currentPassword") as string;
-  const newPassword = formData.get("newPassword") as string;
-  const confirmPassword = formData.get("confirmPassword") as string;
+  const currentPasswordValue = formData.get("currentPassword");
+  const newPasswordValue = formData.get("newPassword");
+  const confirmPasswordValue = formData.get("confirmPassword");
 
+  if (
+    typeof currentPasswordValue !== "string" ||
+    typeof newPasswordValue !== "string" ||
+    typeof confirmPasswordValue !== "string"
+  ) {
+    return { success: false, error: "不正なリクエストです。" };
+  }
+
+  const currentPassword = currentPasswordValue;
+  const newPassword = newPasswordValue;
+  const confirmPassword = confirmPasswordValue;
   // 入力チェック
   if (!currentPassword || !newPassword || !confirmPassword) {
     return { success: false, error: "すべての項目を入力してください。" };
