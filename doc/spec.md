@@ -48,9 +48,11 @@ flowchart LR
 
 - ユーザーはお題の「件名（Subject）」と「本文（Content）」を入力・投稿できる。
 - **お題タイプ**を選択できる（将来的な拡張を考慮）。
-  - **SOLO (1人が発表)**: 従来のLTスタイル。
-  - **GROUP (みんなの話を聞きたい)**: ディスカッションやアンケート形式。
+  - **LIGHTNING_TALK (1人が発表)**: 従来のLTスタイル。
+  - **PRESENTATION (しっかり発表)**: 少し長めの発表スタイル。
+  - **GROUP_TALK (みんなで話す)**: ディスカッションやアンケート形式。
 - **予想所要時間（分単位）**を入力・設定できる。
+  - ※なお `LIGHTNING_TALK` の場合、予想所要時間の上限は10分とする。
 - ログインユーザーとして投稿し、投稿者情報（ユーザー名など）がお題に紐づく。
 
 ### 3.2. お題一覧表示機能
@@ -71,8 +73,9 @@ flowchart LR
 - **排他制御**: 複数人が同時に引いても、同一のお題が重複して選出されないようロック制御を行う。
 - 未消化のお題の中からランダムに1つを選出・表示する。
 - **お題タイプに応じた演出**:
-  - `SOLO`の場合: スポットライトが当たるような演出など。
-  - `GROUP`の場合: みんなが吹き出しで話しているような演出など。
+  - `LIGHTNING_TALK`の場合: スポットライトが当たるような演出など。
+  - `PRESENTATION`の場合: 講義のような演出など。
+  - `GROUP_TALK`の場合: みんなが吹き出しで話しているような演出など。
 - **発表・アクション**:
   - **タイマー機能**: 発表開始と同時に内部的にカウントアップタイマーを作動させる（画面には表示しない）。
     - ユーザーが時間を気にしすぎないよう、経過時間は非表示とする。
@@ -185,7 +188,7 @@ flowchart LR
 5. **投稿画面 (app/post/page.tsx)**
    - 件名入力エリア
    - 本文入力エリア
-   - お題タイプ選択 (SOLO / GROUP)
+   - お題タイプ選択 (LIGHTNING_TALK / PRESENTATION / GROUP_TALK)
    - 投稿ボタン
 
 6. **くじ引き演出画面 (app/draw/page.tsx)**
@@ -232,7 +235,7 @@ flowchart LR
   "id": "string (UUID)",
   "subject": "string (お題の件名)",
   "content": "string (お題の本文)",
-  "type": "enum (SOLO | GROUP - 将来的に拡張可能)",
+  "type": "enum (LIGHTNING_TALK | PRESENTATION | GROUP_TALK - 将来的に拡張可能)",
   "expectedDuration": "number (分 - 予想所要時間)",
   "actualDuration": "number (分 - 実際にかかった時間, nullable)",
   "isUsed": "boolean (消化済みフラグ)",

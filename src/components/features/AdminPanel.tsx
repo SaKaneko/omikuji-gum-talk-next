@@ -158,10 +158,18 @@ export function AdminPanel({ users, themes }: AdminPanelProps) {
                     <div className="flex items-center gap-2 mb-1 flex-wrap">
                       <span
                         className={
-                          theme.type === "SOLO" ? "badge-solo" : "badge-group"
+                          theme.type === "LIGHTNING_TALK"
+                            ? "badge-lightning"
+                            : theme.type === "PRESENTATION"
+                            ? "badge-presentation"
+                            : "badge-group-talk"
                         }
                       >
-                        {theme.type}
+                        {theme.type === "LIGHTNING_TALK"
+                          ? "⚡️ LT"
+                          : theme.type === "PRESENTATION"
+                          ? "🎤 PRESEN"
+                          : "💬 GROUP"}
                       </span>
                       <span
                         className={

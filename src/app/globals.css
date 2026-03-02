@@ -51,12 +51,16 @@
     @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
   }
 
-  .badge-solo {
-    @apply badge bg-blue-100 text-blue-800;
+  .badge-lightning {
+    @apply badge bg-amber-100 text-amber-800;
   }
 
-  .badge-group {
-    @apply badge bg-green-100 text-green-800;
+  .badge-presentation {
+    @apply badge bg-purple-100 text-purple-800;
+  }
+
+  .badge-group-talk {
+    @apply badge bg-blue-100 text-blue-800;
   }
 
   .badge-used {

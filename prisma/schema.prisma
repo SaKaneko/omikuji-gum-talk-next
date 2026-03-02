@@ -57,15 +57,16 @@ model RolePermission {
 }
 
 enum ThemeType {
-  SOLO
-  GROUP
+  LIGHTNING_TALK
+  PRESENTATION
+  GROUP_TALK
 }
 
 model Theme {
   id               String    @id @default(uuid())
   subject          String
   content          String
-  type             ThemeType @default(SOLO)
+  type             ThemeType @default(LIGHTNING_TALK)
   expectedDuration Int       @map("expected_duration")
   actualDuration   Int?      @map("actual_duration")
   isUsed           Boolean   @default(false) @map("is_used")

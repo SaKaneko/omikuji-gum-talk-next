@@ -98,10 +98,18 @@ export function ThemeList({
                     <div className="flex items-center gap-2 mb-2 flex-wrap">
                       <span
                         className={
-                          theme.type === "SOLO" ? "badge-solo" : "badge-group"
+                          theme.type === "LIGHTNING_TALK"
+                            ? "badge-lightning"
+                            : theme.type === "PRESENTATION"
+                            ? "badge-presentation"
+                            : "badge-group-talk"
                         }
                       >
-                        {theme.type === "SOLO" ? "🎤 SOLO" : "💬 GROUP"}
+                        {theme.type === "LIGHTNING_TALK"
+                          ? "⚡️ LT"
+                          : theme.type === "PRESENTATION"
+                          ? "🎤 PRESEN"
+                          : "💬 GROUP"}
                       </span>
                       <span
                         className={

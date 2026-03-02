@@ -1,5 +1,5 @@
 -- CreateEnum
-CREATE TYPE "ThemeType" AS ENUM ('SOLO', 'GROUP');
+CREATE TYPE "ThemeType" AS ENUM ('LIGHTNING_TALK', 'PRESENTATION', 'GROUP_TALK');
 
 -- CreateTable
 CREATE TABLE "users" (
@@ -44,7 +44,7 @@ CREATE TABLE "themes" (
     "id" TEXT NOT NULL,
     "subject" TEXT NOT NULL,
     "content" TEXT NOT NULL,
-    "type" "ThemeType" NOT NULL DEFAULT 'SOLO',
+    "type" "ThemeType" NOT NULL DEFAULT 'LIGHTNING_TALK',
     "expected_duration" INTEGER NOT NULL,
     "actual_duration" INTEGER,
     "is_used" BOOLEAN NOT NULL DEFAULT false,

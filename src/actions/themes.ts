@@ -20,6 +20,10 @@ export async function postTheme(data: ThemeFormData): Promise<ActionResult> {
     return { success: false, error: "予想所要時間は正の数を入力してください。" };
   }
 
+  if (data.type === "LIGHTNING_TALK" && data.expectedDuration > 10) {
+    return { success: false, error: "LT（Lightning Talk）は最大10分までです。" };
+  }
+
   await prisma.theme.create({
     data: {
       subject: data.subject,

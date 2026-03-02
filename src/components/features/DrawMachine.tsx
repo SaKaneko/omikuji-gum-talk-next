@@ -138,8 +138,9 @@ export function DrawMachine() {
                   className="input-field text-sm"
                 >
                   <option value="">すべて</option>
-                  <option value="SOLO">🎤 SOLO</option>
-                  <option value="GROUP">💬 GROUP</option>
+                  <option value="LIGHTNING_TALK">⚡️ LT</option>
+                  <option value="PRESENTATION">🎤 PRESEN</option>
+                  <option value="GROUP_TALK">💬 GROUP</option>
                 </select>
               </div>
               <div>
@@ -202,16 +203,19 @@ export function DrawMachine() {
         <div className="space-y-4">
           <div
             className={`card ${
-              drawnTheme.type === "SOLO"
+              drawnTheme.type !== "GROUP_TALK"
                 ? "animate-spotlight border-2 border-amber-300"
                 : "border-2 border-green-300"
             }`}
           >
-            {drawnTheme.type === "SOLO" ? (
-              // SOLO spotlight effect
+            {drawnTheme.type !== "GROUP_TALK" ? (
               <div className="text-center animate-fade-in">
-                <div className="text-5xl mb-4">🎤✨</div>
-                <div className="badge-solo text-sm mb-3">SOLO</div>
+                <div className="text-5xl mb-4">
+                  {drawnTheme.type === "LIGHTNING_TALK" ? "⚡️✨" : "🎤✨"}
+                </div>
+                <div className={`${drawnTheme.type === "LIGHTNING_TALK" ? "badge-lightning" : "badge-presentation"} text-sm mb-3`}>
+                  {drawnTheme.type === "LIGHTNING_TALK" ? "⚡️ LT" : "🎤 PRESEN"}
+                </div>
                 <h2 className="text-2xl font-bold text-gray-800 mb-3">
                   {drawnTheme.subject}
                 </h2>
@@ -231,10 +235,9 @@ export function DrawMachine() {
                 </div>
               </div>
             ) : (
-              // GROUP bubble effect
               <div className="text-center animate-bubble">
                 <div className="text-5xl mb-4">💬🗣️💬</div>
-                <div className="badge-group text-sm mb-3">GROUP</div>
+                <div className="badge-group-talk text-sm mb-3">💬 GROUP</div>
                 <h2 className="text-2xl font-bold text-gray-800 mb-3">
                   {drawnTheme.subject}
                 </h2>
@@ -282,7 +285,7 @@ export function DrawMachine() {
         <div className="space-y-4">
           <div className="card text-center">
             <div className="text-5xl mb-4">
-              {drawnTheme.type === "SOLO" ? "🎤" : "💬"}
+              {drawnTheme.type === "LIGHTNING_TALK" ? "⚡️" : drawnTheme.type === "PRESENTATION" ? "🎤" : "💬"}
             </div>
             <h2 className="text-xl font-bold text-gray-800 mb-2">
               {drawnTheme.subject}
