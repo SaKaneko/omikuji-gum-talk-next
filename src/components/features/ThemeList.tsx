@@ -108,8 +108,8 @@ export function ThemeList({
                         {theme.type === "LIGHTNING_TALK"
                           ? "⚡️ LT"
                           : theme.type === "PRESENTATION"
-                          ? "🎤 PRESEN"
-                          : "💬 GROUP"}
+                          ? "🎤 PRESENTATION"
+                          : "💬 GROUP TALK"}
                       </span>
                       <span
                         className={
