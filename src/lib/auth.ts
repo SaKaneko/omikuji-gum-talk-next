@@ -1,7 +1,7 @@
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 import { prisma } from "./prisma";
-import { scryptSync, randomBytes } from "crypto";
+import { scryptSync, randomBytes, timingSafeEqual } from "crypto";
 
 const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || "fallback-secret-do-not-use-in-production"
@@ -37,7 +37,10 @@ export function verifyPassword(
   hash: string
 ): boolean {
   const computedHash = hashPassword(password, salt);
-  return computedHash === hash;
+  const a = Buffer.from(computedHash, "hex");
+  const b = Buffer.from(hash, "hex");
+  if (a.length !== b.length) return false;
+  return timingSafeEqual(a, b);
 }
 
 export async function createToken(payload: JWTPayload): Promise<string> {

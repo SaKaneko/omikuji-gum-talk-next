@@ -145,6 +145,14 @@ Next.js App Router の機能を活用し、クライアントからの操作は 
 
 - `updateUserRole(userId, newRole)`: 権限変更
 
+#### Settings Actions
+
+- `changePassword(formData)`: パスワード変更
+  - 入力: 現在のパスワード、新しいパスワード、新しいパスワード（確認）
+  - 処理: 入力チェック → パスワード長さチェック → 確認入力一致チェック → 新旧パスワード一致チェック → 現在のパスワード検証 → パスワードハッシュ・ソルト再生成 → DB更新
+  - 戻り値: `{ success: boolean, error?: string }`
+  - 将来的に設定項目が増えた場合、このグループにアクションを追加する（例: `updateDisplayName`, `updateProfile` 等）
+
 ### 3.2 Route Handlers (API Endpoints)
 
 必要に応じて以下のエンドポイントを実装する。基本的には Server Actions で完結させる方針とする。
@@ -171,16 +179,19 @@ src/ (またはルート直下)
   │   │   ├── page.tsx          # トップ画面 (メニュー)
   │   │   ├── themes/page.tsx   # お題一覧
   │   │   ├── post/page.tsx     # 投稿画面
-  │   │   └── draw/page.tsx     # くじ引き画面
-  │   ├── admin/       # 管理画面
+  │   │   ├── draw/page.tsx     # くじ引き画面
+  │   │   ├── admin/            # 管理画面
+  │   │   │   └── page.tsx      # 管理ページ
+  │   │   └── settings/         # 設定画面
+  │   │       └── page.tsx      # 設定ページ (タブ構成)
   │   ├── api/         # Route Handlers
   │   ├── globals.css  # グローバルスタイル
   │   └── layout.tsx   # ルートレイアウト
   ├── components/      # UIパーツ
   │   ├── ui/          # 汎用UI (Button, Input etc - shadcn/ui想定)
-  │   └── features/    # 機能単位 (ThemeCard, DrawDisplay etc)
+  │   └── features/    # 機能単位 (ThemeCard, DrawDisplay, SettingsPanel etc)
   ├── lib/             # ユーティリティ (prisma client, auth config)
-  ├── actions/         # Server Actions (auth.ts, themes.ts)
+  ├── actions/         # Server Actions (auth.ts, themes.ts, settings.ts)
   └── types/           # 型定義
 ```
 
@@ -195,6 +206,16 @@ src/ (またはルート直下)
 ### 4.3 画面構成 (Routing)
 
 仕様書の画面遷移図に準拠する。
+
+### 4.4 ヘッダー (Header Component)
+
+共通ヘッダー (`components/features/Header.tsx`) に以下の要素を配置する。
+
+- **左側**: アプリ名（トップページへのリンク）
+- **中央**: メインナビゲーション（ホーム、お題一覧、投稿、くじ引き、管理）
+- **右側**: ユーザーエリア
+  - **ユーザー名**: クリックすると `/settings`（設定画面）へ遷移するリンクとする。ホバー時に視覚的フィードバック（下線やカーソル変更など）を表示し、クリック可能であることを示す。
+  - **ログアウトボタン**
 
 ## 5. ロジック詳細 (Business Logic)
 
@@ -219,3 +240,4 @@ src/ (またはルート直下)
 | 閲覧(他・詳細) |   ○   |    ☓    | 他人は件名のみ |
 | くじ引き       |   ○   |    ☓    | 権限設定による |
 | 削除(他)       |   ○   |    ☓    |                |
+| 設定変更(自)   |   ○   |    ○    | 自身の設定のみ |
