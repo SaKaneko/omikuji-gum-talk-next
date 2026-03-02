@@ -204,12 +204,14 @@ export function DrawMachine() {
         <div className="space-y-4">
           <div
             className={`card ${
-              drawnTheme.type !== "GROUP_TALK"
+              drawnTheme.type === "LIGHTNING_TALK"
                 ? "animate-spotlight border-2 border-amber-300"
+                : drawnTheme.type === "PRESENTATION"
+                ? "animate-lecture border-2 border-purple-300"
                 : "border-2 border-green-300"
             }`}
           >
-            {drawnTheme.type !== "GROUP_TALK" ? (
+            {drawnTheme.type === "LIGHTNING_TALK" ? (
               <div className="text-center animate-fade-in">
                 <div className="text-5xl mb-4">
                   {getThemeDisplay(drawnTheme.type).emoji}✨
@@ -223,6 +225,32 @@ export function DrawMachine() {
                 <p className="text-gray-600 whitespace-pre-wrap mb-4 text-left">
                   {drawnTheme.content}
                 </p>
+                <div className="text-left mt-6">
+                  <p className="text-sm text-gray-500">
+                    投稿者:{" "}
+                    {drawnTheme.author.deletedAt
+                      ? "削除されたユーザー"
+                      : drawnTheme.author.name}
+                  </p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    予想: {drawnTheme.expectedDuration}分
+                  </p>
+                </div>
+              </div>
+            ) : drawnTheme.type === "PRESENTATION" ? (
+              <div className="text-center">
+                <div className="text-5xl mb-4">🎓📊🎤</div>
+                <div className={`${getThemeDisplay("PRESENTATION").badgeClass} text-sm mb-3`}>
+                  {getThemeDisplay("PRESENTATION").label}
+                </div>
+                <h2 className="text-2xl font-bold text-gray-800 mb-3">
+                  {drawnTheme.subject}
+                </h2>
+                <div className="bg-purple-50 border-l-4 border-purple-400 rounded-r-xl p-4 mb-4">
+                  <p className="text-gray-700 whitespace-pre-wrap text-left">
+                    {drawnTheme.content}
+                  </p>
+                </div>
                 <div className="text-left mt-6">
                   <p className="text-sm text-gray-500">
                     投稿者:{" "}
