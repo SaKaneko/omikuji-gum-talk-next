@@ -3,7 +3,7 @@
 import { useState, useRef, useCallback, useTransition } from "react";
 import { ThemeType } from "@prisma/client";
 import { ThemeWithAuthor, DrawFilters } from "@/types";
-import { drawOmikuji, passTheme, completeTheme } from "@/actions/themes";
+import { drawOmikuji, drawOldestTheme, passTheme, completeTheme } from "@/actions/themes";
 import { getThemeDisplay } from "@/lib/themeDisplay";
 
 type DrawState = "idle" | "drawing" | "result" | "presenting" | "completed";
@@ -22,14 +22,19 @@ export function DrawMachine() {
   const [filterMinDuration, setFilterMinDuration] = useState<string>("");
   const [filterMaxDuration, setFilterMaxDuration] = useState<string>("");
 
-  const handleDraw = useCallback(() => {
-    setError(null);
-    setState("drawing");
-
+  const buildFilters = useCallback((): DrawFilters => {
     const filters: DrawFilters = {};
     if (filterType) filters.type = filterType as ThemeType;
     if (filterMinDuration) filters.minDuration = parseInt(filterMinDuration);
     if (filterMaxDuration) filters.maxDuration = parseInt(filterMaxDuration);
+    return filters;
+  }, [filterType, filterMinDuration, filterMaxDuration]);
+
+  const handleDraw = useCallback(() => {
+    setError(null);
+    setState("drawing");
+
+    const filters = buildFilters();
 
     // Simulate slot animation delay
     setTimeout(() => {
@@ -44,7 +49,28 @@ export function DrawMachine() {
         }
       });
     }, 3000);
-  }, [filterType, filterMinDuration, filterMaxDuration]);
+  }, [buildFilters]);
+
+  const handleDrawOldest = useCallback(() => {
+    setError(null);
+    setState("drawing");
+
+    const filters = buildFilters();
+
+    // Simulate slot animation delay
+    setTimeout(() => {
+      startTransition(async () => {
+        const result = await drawOldestTheme(filters);
+        if (result.success && result.theme) {
+          setDrawnTheme(result.theme);
+          setState("result");
+        } else {
+          setError(result.error || "選出に失敗しました。");
+          setState("idle");
+        }
+      });
+    }, 3000);
+  }, [buildFilters]);
 
   const handleStartPresentation = useCallback(() => {
     setState("presenting");
@@ -173,13 +199,20 @@ export function DrawMachine() {
             </div>
           </div>
 
-          <div className="text-center">
+          <div className="flex justify-center gap-4">
             <button
               onClick={handleDraw}
               disabled={isPending}
               className="bg-gradient-to-r from-amber-500 to-orange-600 text-white px-12 py-4 rounded-2xl text-xl font-bold shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:hover:scale-100"
             >
               🎯 くじを引く！
+            </button>
+            <button
+              onClick={handleDrawOldest}
+              disabled={isPending}
+              className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-12 py-4 rounded-2xl text-xl font-bold shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:hover:scale-100"
+            >
+              📜 一番古い投稿を取出す
             </button>
           </div>
         </div>

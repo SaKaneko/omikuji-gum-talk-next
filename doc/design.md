@@ -137,7 +137,8 @@ Next.js App Router の機能を活用し、クライアントからの操作は 
 - `postTheme(data)`: お題投稿
 - `deleteTheme(id)`: お題削除
 - `updateThemeStatus(id, status)`: お題ステータス変更
-- `drawOmikuji(filters)`: **排他制御**を実行しお題を抽選
+- `drawOmikuji(filters)`: **排他制御**を実行しお題をランダムに抽選
+- `drawOldestTheme(filters)`: **排他制御**を実行し一番古いお題を選出・取得
 - `passTheme(id)`: パス (引き直し) - お題を未消化に戻す
 - `completeTheme(id, actualDuration)`: 完了報告 (実績時間の記録と係数更新)
 

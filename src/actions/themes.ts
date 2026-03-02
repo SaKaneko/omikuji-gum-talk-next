@@ -159,6 +159,81 @@ export async function drawOmikuji(
   }
 }
 
+export async function drawOldestTheme(
+  filters: DrawFilters
+): Promise<{ success: boolean; theme?: ThemeWithAuthor; error?: string }> {
+  const user = await getCurrentUser();
+  if (!user) {
+    return { success: false, error: "ログインが必要です。" };
+  }
+
+  if (!hasPermission(user, "draw_omikuji")) {
+    return { success: false, error: "くじ引きの権限がありません。" };
+  }
+
+  try {
+    const result = await prisma.$transaction(async (tx) => {
+      // Build WHERE conditions
+      const conditions: string[] = ["is_used = false"];
+      const params: (string | number)[] = [];
+      let paramIndex = 1;
+
+      if (filters.type) {
+        conditions.push(`type = $${paramIndex}::"ThemeType"`);
+        params.push(filters.type);
+        paramIndex++;
+      }
+      if (filters.minDuration !== undefined && filters.minDuration > 0) {
+        conditions.push(`expected_duration >= $${paramIndex}`);
+        params.push(filters.minDuration);
+        paramIndex++;
+      }
+      if (filters.maxDuration !== undefined && filters.maxDuration > 0) {
+        conditions.push(`expected_duration <= $${paramIndex}`);
+        params.push(filters.maxDuration);
+        paramIndex++;
+      }
+
+      const whereClause = conditions.join(" AND ");
+
+      // SELECT oldest theme with FOR UPDATE SKIP LOCKED for exclusive access
+      const themes = await tx.$queryRawUnsafe<Array<{ id: string }>>(
+        `SELECT id FROM themes WHERE ${whereClause} ORDER BY created_at ASC LIMIT 1 FOR UPDATE SKIP LOCKED`,
+        ...params
+      );
+
+      if (themes.length === 0) {
+        return null;
+      }
+
+      return tx.theme.findUnique({
+        where: { id: themes[0].id },
+        include: {
+          author: {
+            select: {
+              id: true,
+              name: true,
+              timeBiasCoefficient: true,
+              deletedAt: true,
+            },
+          },
+        },
+      });
+    }, {
+      isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+    });
+
+    if (!result) {
+      return { success: false, error: "選出可能なお題がありません。" };
+    }
+
+    return { success: true, theme: result as ThemeWithAuthor };
+  } catch (error) {
+    console.error("Draw oldest error:", error);
+    return { success: false, error: "選出中にエラーが発生しました。もう一度お試しください。" };
+  }
+}
+
 export async function passTheme(id: string): Promise<ActionResult> {
   const user = await getCurrentUser();
   if (!user) {
