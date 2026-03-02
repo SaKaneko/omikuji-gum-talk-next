@@ -180,9 +180,10 @@ src/ (またはルート直下)
   │   │   ├── themes/page.tsx   # お題一覧
   │   │   ├── post/page.tsx     # 投稿画面
   │   │   ├── draw/page.tsx     # くじ引き画面
+  │   │   ├── admin/            # 管理画面
+  │   │   │   └── page.tsx      # 管理ページ
   │   │   └── settings/         # 設定画面
   │   │       └── page.tsx      # 設定ページ (タブ構成)
-  │   ├── admin/       # 管理画面
   │   ├── api/         # Route Handlers
   │   ├── globals.css  # グローバルスタイル
   │   └── layout.tsx   # ルートレイアウト
