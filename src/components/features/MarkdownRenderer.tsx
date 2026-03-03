@@ -11,7 +11,7 @@ interface MarkdownRendererProps {
 
 export function MarkdownRenderer({ content, className = "" }: MarkdownRendererProps) {
   return (
-    <div className={`markdown-body ${className}`}>
+    <div className={["markdown-body", className].filter(Boolean).join(" ")}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[rehypeSanitize]}
