@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { ThemeWithAuthor } from "@/types";
+import { ThemeStatus } from "@prisma/client";
 import { deleteTheme, updateThemeStatus } from "@/actions/themes";
 import { getThemeDisplay } from "@/lib/themeDisplay";
 import { MarkdownRenderer } from "@/components/features/MarkdownRenderer";
@@ -14,7 +15,13 @@ interface ThemeListProps {
   isAdmin: boolean;
 }
 
-type FilterStatus = "all" | "unused" | "used";
+type FilterStatus = "all" | "pending" | "in_progress" | "completed";
+
+const statusDisplay: Record<ThemeStatus, { label: string; badge: string }> = {
+  PENDING: { label: "🔥 未消化", badge: "badge-unused" },
+  IN_PROGRESS: { label: "🎙️ 発表中", badge: "inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800" },
+  COMPLETED: { label: "✅ 消化済み", badge: "badge-used" },
+};
 
 export function ThemeList({
   themes,
@@ -23,12 +30,13 @@ export function ThemeList({
   canDeleteOthers,
   isAdmin,
 }: ThemeListProps) {
-  const [filter, setFilter] = useState<FilterStatus>("unused");
+  const [filter, setFilter] = useState<FilterStatus>("pending");
   const [isPending, startTransition] = useTransition();
 
   const filteredThemes = themes.filter((theme) => {
-    if (filter === "used") return theme.isUsed;
-    if (filter === "unused") return !theme.isUsed;
+    if (filter === "completed") return theme.status === "COMPLETED";
+    if (filter === "pending") return theme.status === "PENDING";
+    if (filter === "in_progress") return theme.status === "IN_PROGRESS";
     return true;
   });
 
@@ -39,9 +47,10 @@ export function ThemeList({
     });
   };
 
-  const handleToggleStatus = (id: string, currentStatus: boolean) => {
+  const handleToggleStatus = (id: string, currentStatus: ThemeStatus) => {
+    const newStatus: ThemeStatus = currentStatus === "COMPLETED" ? "PENDING" : "COMPLETED";
     startTransition(async () => {
-      await updateThemeStatus(id, !currentStatus);
+      await updateThemeStatus(id, newStatus);
     });
   };
 
@@ -54,12 +63,13 @@ export function ThemeList({
   return (
     <div>
       {/* Filter tabs */}
-      <div className="flex gap-2 mb-6">
+      <div className="flex gap-2 mb-6 flex-wrap">
         {([
-          { key: "all", label: "すべて", count: themes.length },
-          { key: "unused", label: "未消化", count: themes.filter((t) => !t.isUsed).length },
-          { key: "used", label: "消化済み", count: themes.filter((t) => t.isUsed).length },
-        ] as const).map((tab) => (
+          { key: "all" as FilterStatus, label: "すべて", count: themes.length },
+          { key: "pending" as FilterStatus, label: "未消化", count: themes.filter((t) => t.status === "PENDING").length },
+          { key: "in_progress" as FilterStatus, label: "発表中", count: themes.filter((t) => t.status === "IN_PROGRESS").length },
+          { key: "completed" as FilterStatus, label: "消化済み", count: themes.filter((t) => t.status === "COMPLETED").length },
+        ]).map((tab) => (
           <button
             key={tab.key}
             onClick={() => setFilter(tab.key)}
@@ -87,12 +97,13 @@ export function ThemeList({
             const isOwnPost = theme.authorId === currentUserId;
             const canViewDetail = isOwnPost || canViewOthers;
             const canDelete = isOwnPost || canDeleteOthers;
+            const sd = statusDisplay[theme.status];
 
             return (
               <div
                 key={theme.id}
                 className={`card animate-slide-up ${
-                  theme.isUsed ? "opacity-60" : ""
+                  theme.status === "COMPLETED" ? "opacity-60" : ""
                 }`}
               >
                 <div className="flex items-start justify-between gap-4">
@@ -101,12 +112,8 @@ export function ThemeList({
                       <span className={getThemeDisplay(theme.type).badgeClass}>
                         {getThemeDisplay(theme.type).longLabel}
                       </span>
-                      <span
-                        className={
-                          theme.isUsed ? "badge-used" : "badge-unused"
-                        }
-                      >
-                        {theme.isUsed ? "✅ 消化済み" : "🔥 未消化"}
+                      <span className={sd.badge}>
+                        {sd.label}
                       </span>
                       {canViewDetail && (
                         <span className="text-xs text-gray-400">
@@ -154,12 +161,12 @@ export function ThemeList({
                     {isAdmin && (
                       <button
                         onClick={() =>
-                          handleToggleStatus(theme.id, theme.isUsed)
+                          handleToggleStatus(theme.id, theme.status)
                         }
                         disabled={isPending}
                         className="text-xs px-3 py-1 rounded-md bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors disabled:opacity-50"
                       >
-                        {theme.isUsed ? "未消化に戻す" : "消化済みにする"}
+                        {theme.status === "COMPLETED" ? "未消化に戻す" : "消化済みにする"}
                       </button>
                     )}
                     {canDelete && (

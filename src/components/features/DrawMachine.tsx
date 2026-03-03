@@ -3,7 +3,7 @@
 import { useState, useRef, useCallback, useTransition } from "react";
 import { ThemeType } from "@prisma/client";
 import { ThemeWithAuthor, DrawFilters } from "@/types";
-import { drawOmikuji, drawOldestTheme, passTheme, completeTheme } from "@/actions/themes";
+import { drawOmikuji, drawOldestTheme, passTheme, completeTheme, startPresentation } from "@/actions/themes";
 import { getThemeDisplay } from "@/lib/themeDisplay";
 import { MarkdownRenderer } from "@/components/features/MarkdownRenderer";
 
@@ -74,14 +74,22 @@ export function DrawMachine() {
   }, [buildFilters]);
 
   const handleStartPresentation = useCallback(() => {
-    setState("presenting");
-    startTimeRef.current = Date.now();
-    // Hidden timer - update actual duration in background
-    timerRef.current = setInterval(() => {
-      const elapsed = (Date.now() - startTimeRef.current) / 60000;
-      setActualDuration(Math.round(elapsed * 10) / 10);
-    }, 1000);
-  }, []);
+    if (!drawnTheme) return;
+    startTransition(async () => {
+      const result = await startPresentation(drawnTheme.id);
+      if (result.success) {
+        setState("presenting");
+        startTimeRef.current = Date.now();
+        // Hidden timer - update actual duration in background
+        timerRef.current = setInterval(() => {
+          const elapsed = (Date.now() - startTimeRef.current) / 60000;
+          setActualDuration(Math.round(elapsed * 10) / 10);
+        }, 1000);
+      } else {
+        setError(result.error || "発表開始に失敗しました。");
+      }
+    });
+  }, [drawnTheme]);
 
   const handleComplete = useCallback(() => {
     if (timerRef.current) {

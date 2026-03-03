@@ -1,9 +1,13 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { expireTimedOutThemes } from "@/actions/themes";
 
 export async function GET() {
+  // 発表中タイムアウトチェック
+  await expireTimedOutThemes();
+
   const unusedThemes = await prisma.theme.findMany({
-    where: { isUsed: false },
+    where: { status: "PENDING" },
     select: {
       expectedDuration: true,
       author: {

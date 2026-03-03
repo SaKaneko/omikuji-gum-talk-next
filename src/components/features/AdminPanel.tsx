@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { ThemeWithAuthor } from "@/types";
+import { ThemeStatus } from "@prisma/client";
 import { updateUserRole, deleteUser } from "@/actions/users";
 import { deleteTheme, updateThemeStatus } from "@/actions/themes";
 import { getThemeDisplay } from "@/lib/themeDisplay";
@@ -45,9 +46,10 @@ export function AdminPanel({ users, themes }: AdminPanelProps) {
     });
   };
 
-  const handleToggleThemeStatus = (themeId: string, isUsed: boolean) => {
+  const handleToggleThemeStatus = (themeId: string, currentStatus: ThemeStatus) => {
+    const newStatus: ThemeStatus = currentStatus === "COMPLETED" ? "PENDING" : "COMPLETED";
     startTransition(async () => {
-      await updateThemeStatus(themeId, !isUsed);
+      await updateThemeStatus(themeId, newStatus);
     });
   };
 
@@ -130,7 +132,7 @@ export function AdminPanel({ users, themes }: AdminPanelProps) {
       {activeTab === "themes" && (
         <div className="space-y-3">
           {(() => {
-            const unusedThemes = themes.filter((t) => !t.isUsed);
+            const unusedThemes = themes.filter((t) => t.status === "PENDING");
             const totalCorrectedDuration = unusedThemes.reduce((sum, t) => {
               return sum + t.expectedDuration * Math.exp(t.author.timeBiasCoefficient);
             }, 0);
@@ -152,7 +154,7 @@ export function AdminPanel({ users, themes }: AdminPanelProps) {
             themes.map((theme) => (
               <div
                 key={theme.id}
-                className={`card ${theme.isUsed ? "opacity-60" : ""}`}
+                className={`card ${theme.status === "COMPLETED" ? "opacity-60" : ""}`}
               >
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">
@@ -162,10 +164,18 @@ export function AdminPanel({ users, themes }: AdminPanelProps) {
                       </span>
                       <span
                         className={
-                          theme.isUsed ? "badge-used" : "badge-unused"
+                          theme.status === "COMPLETED"
+                            ? "badge-used"
+                            : theme.status === "IN_PROGRESS"
+                            ? "inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800"
+                            : "badge-unused"
                         }
                       >
-                        {theme.isUsed ? "消化済み" : "未消化"}
+                        {theme.status === "COMPLETED"
+                          ? "消化済み"
+                          : theme.status === "IN_PROGRESS"
+                          ? "発表中"
+                          : "未消化"}
                       </span>
                     </div>
                     <h3 className="font-semibold text-sm">{theme.subject}</h3>
@@ -185,12 +195,12 @@ export function AdminPanel({ users, themes }: AdminPanelProps) {
                   <div className="flex flex-col gap-1 shrink-0">
                     <button
                       onClick={() =>
-                        handleToggleThemeStatus(theme.id, theme.isUsed)
+                        handleToggleThemeStatus(theme.id, theme.status)
                       }
                       disabled={isPending}
                       className="text-xs px-3 py-1 rounded-md bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors disabled:opacity-50"
                     >
-                      {theme.isUsed ? "未消化へ" : "消化済みへ"}
+                      {theme.status === "COMPLETED" ? "未消化へ" : "消化済みへ"}
                     </button>
                     <button
                       onClick={() => handleDeleteTheme(theme.id)}

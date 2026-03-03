@@ -62,7 +62,8 @@ erDiagram
         enum type "LIGHTNING_TALK | PRESENTATION | GROUP_TALK"
         int expectedDuration "Minutes"
         int actualDuration "Minutes, nullable"
-        boolean isUsed "Default: false"
+        enum status "PENDING | IN_PROGRESS | COMPLETED"
+        timestamp presentedAt "nullable, 発表開始日時"
         timestamp createdAt
         string authorId FK
     }
@@ -106,17 +107,18 @@ erDiagram
 
 #### 2.2.5 Themes テーブル
 
-| カラム名          | 型        | 制約          | 説明                                                    |
-| :---------------- | :-------- | :------------ | :------------------------------------------------------ |
-| id                | UUID      | PK            | お題ID                                                  |
-| subject           | VARCHAR   | NOT NULL      | 件名                                                    |
-| content           | TEXT      | NOT NULL      | 本文                                                    |
-| type              | VARCHAR   | NOT NULL      | お題タイプ (LIGHTNING_TALK / PRESENTATION / GROUP_TALK) |
-| expected_duration | INTEGER   | NOT NULL      | 予想所要時間(分)                                        |
-| actual_duration   | INTEGER   | NULL          | 実績所要時間(分)                                        |
-| is_used           | BOOLEAN   | DEFAULT FALSE | 消化済みフラグ                                          |
-| author_id         | UUID      | FK            | 投稿者ID (Users.id)                                     |
-| created_at        | TIMESTAMP | DEFAULT NOW() | 作成日時                                                |
+| カラム名          | 型        | 制約              | 説明                                                    |
+| :---------------- | :-------- | :---------------- | :------------------------------------------------------ |
+| id                | UUID      | PK                | お題ID                                                  |
+| subject           | VARCHAR   | NOT NULL          | 件名                                                    |
+| content           | TEXT      | NOT NULL          | 本文                                                    |
+| type              | VARCHAR   | NOT NULL          | お題タイプ (LIGHTNING_TALK / PRESENTATION / GROUP_TALK) |
+| expected_duration | INTEGER   | NOT NULL          | 予想所要時間(分)                                        |
+| actual_duration   | INTEGER   | NULL              | 実績所要時間(分)                                        |
+| status            | VARCHAR   | DEFAULT 'PENDING' | ステータス (PENDING / IN_PROGRESS / COMPLETED)          |
+| author_id         | UUID      | FK                | 投稿者ID (Users.id)                                     |
+| presented_at      | TIMESTAMP | NULL              | 発表開始日時 (IN_PROGRESS遷移時に記録)                  |
+| created_at        | TIMESTAMP | DEFAULT NOW()     | 作成日時                                                |
 
 ## 3. API設計 / Server Actions
 
@@ -142,6 +144,7 @@ Next.js App Router の機能を活用し、クライアントからの操作は 
 - `drawOldestTheme(filters)`: **排他制御**を実行し一番古いお題を選出・取得
 - `passTheme(id)`: パス (引き直し) - お題を未消化に戻す
 - `completeTheme(id, actualDuration)`: 完了報告 (実績時間の記録と係数更新)
+- `expireTimedOutThemes()`: 発表中タイムアウトチェック（`presentedAt` から1時間経過した `IN_PROGRESS` のお題を `COMPLETED` に自動更新。`actualDuration` は `null` のままとする）
 
 #### User Actions (Admin)
 
@@ -162,6 +165,8 @@ Next.js App Router の機能を活用し、クライアントからの操作は 
 - `GET /api/me`: 現在のログインユーザー情報取得 (Client Component初期化用など)
 - `GET /api/themes/remaining`: 未消化のお題統計情報取得（認証不要）
   - レスポンス: `{ count: number, totalExpectedDuration: number, totalCorrectedDuration: number }`
+- `GET /api/themes/active`: 現在発表中(`status='IN_PROGRESS'`)のお題を取得
+  - レスポンス: `{ id, subject, content, type, ... }` （ポーリングやSWRを利用してクライアントから定期購読する）
 
 ### 3.3 認証機構 (Authentication Mechanism)
 
@@ -230,6 +235,19 @@ src/ (またはルート直下)
 
 - Server Action `completeTheme` 内で実装。
 - 仕様書 $3.6$ の数式に基づき $k$ を更新する。
+
+### 5.3 発表中タイムアウト（自動完了）ロジック
+
+- **目的**: 発表中状態のまま放置されたお題を自動的に消化済みにする。
+- **トリガー条件**: `presentedAt` からの経過時間が **60分**を超えた場合。
+- **実装方式**: サーバーサイド遅延評価（Lazy Evaluation）。cronジョブは用いず、以下のタイミングでチェックを実行する。
+  - `GET /api/themes/active` 呼び出し時（ポーリング毎にチェック）
+  - `drawOmikuji` / `drawOldestTheme` 実行時（抽選前にチェック）
+  - `GET /api/themes/remaining` 呼び出し時
+- **処理内容**:
+  1. `status = 'IN_PROGRESS'` かつ `presentedAt + 60分 < NOW()` のお題を検索。
+  2. 該当お題の `status` を `COMPLETED` に更新。`actualDuration` は `null` のままとする。
+  3. ズレ係数の再計算は行わない（正常な発表終了ではないため）。
 
 ## 6. セキュリティ (Security)
 
