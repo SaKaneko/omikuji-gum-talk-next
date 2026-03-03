@@ -15,6 +15,27 @@ export function MarkdownRenderer({ content, className = "" }: MarkdownRendererPr
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[rehypeSanitize]}
+        components={{
+          a: ({ href, children, ...props }) => {
+            const isExternal =
+              typeof href === "string" &&
+              /^(?:[a-z][a-z0-9+.-]*:|\/\/)/i.test(href);
+
+            if (isExternal) {
+              return (
+                <a href={href} target="_blank" rel="noopener noreferrer" {...props}>
+                  {children}
+                </a>
+              );
+            }
+
+            return (
+              <a href={href} {...props}>
+                {children}
+              </a>
+            );
+          },
+        }}
       >
         {content}
       </ReactMarkdown>
