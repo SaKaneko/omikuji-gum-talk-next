@@ -1,5 +1,6 @@
 import { getCurrentUser } from "@/lib/auth";
 import { Header } from "@/components/features/Header";
+import { ActiveThemeBubble } from "@/components/features/ActiveThemeBubble";
 import { redirect } from "next/navigation";
 
 export default async function MainLayout({
@@ -21,6 +22,7 @@ export default async function MainLayout({
       <footer className="text-center py-4 text-gray-400 text-sm">
         {process.env.NEXT_PUBLIC_APP_NAME ?? "おだいボックス"}
       </footer>
+      <ActiveThemeBubble />
     </div>
   );
 }

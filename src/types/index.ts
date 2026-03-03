@@ -1,4 +1,4 @@
-import { ThemeType } from "@prisma/client";
+import { ThemeType, ThemeStatus } from "@prisma/client";
 
 export interface ActionResult {
   success: boolean;
@@ -25,13 +25,26 @@ export interface ThemeWithAuthor {
   type: ThemeType;
   expectedDuration: number;
   actualDuration: number | null;
-  isUsed: boolean;
+  status: ThemeStatus;
+  presentedAt: Date | null;
   createdAt: Date;
   authorId: string;
   author: {
     id: string;
     name: string;
     timeBiasCoefficient: number;
+    deletedAt: Date | null;
+  };
+}
+
+export interface ActiveTheme {
+  id: string;
+  subject: string;
+  content: string;
+  type: ThemeType;
+  expectedDuration: number;
+  author: {
+    name: string;
     deletedAt: Date | null;
   };
 }

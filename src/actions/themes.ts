@@ -4,7 +4,33 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser, hasPermission } from "@/lib/auth";
 import { ActionResult, ThemeFormData, DrawFilters, ThemeWithAuthor } from "@/types";
-import { Prisma } from "@prisma/client";
+import { Prisma, ThemeStatus } from "@prisma/client";
+
+/** 発表中タイムアウトチェック: presentedAt から60分超過した IN_PROGRESS のお題を COMPLETED に自動更新 */
+export async function expireTimedOutThemes(): Promise<number> {
+  const cutoff = new Date(Date.now() - 60 * 60 * 1000); // 1時間前
+
+  const result = await prisma.theme.updateMany({
+    where: {
+      status: "IN_PROGRESS",
+      presentedAt: {
+        not: null,
+        lt: cutoff,
+      },
+    },
+    data: {
+      status: "COMPLETED",
+      // actualDuration は null のまま（タイムアウトによる自動完了のため）
+    },
+  });
+
+  if (result.count > 0) {
+    revalidatePath("/themes");
+    revalidatePath("/draw");
+  }
+
+  return result.count;
+}
 
 export async function postTheme(data: ThemeFormData): Promise<ActionResult> {
   const user = await getCurrentUser();
@@ -61,7 +87,7 @@ export async function deleteTheme(id: string): Promise<ActionResult> {
 
 export async function updateThemeStatus(
   id: string,
-  isUsed: boolean
+  status: ThemeStatus
 ): Promise<ActionResult> {
   const user = await getCurrentUser();
   if (!user) {
@@ -75,7 +101,7 @@ export async function updateThemeStatus(
 
   await prisma.theme.update({
     where: { id },
-    data: { isUsed },
+    data: { status },
   });
 
   revalidatePath("/themes");
@@ -98,7 +124,7 @@ export async function drawOmikuji(
     // Use interactive transaction with raw query for row-level locking
     const result = await prisma.$transaction(async (tx) => {
       // Build WHERE conditions
-      const conditions: string[] = ["is_used = false"];
+      const conditions: string[] = ["status = 'PENDING'"];
       const params: (string | number)[] = [];
       let paramIndex = 1;
 
@@ -172,9 +198,12 @@ export async function drawOldestTheme(
   }
 
   try {
+    // 抽選前にタイムアウトチェック
+    await expireTimedOutThemes();
+
     const result = await prisma.$transaction(async (tx) => {
       // Build WHERE conditions
-      const conditions: string[] = ["is_used = false"];
+      const conditions: string[] = ["status = 'PENDING'"];
       const params: (string | number)[] = [];
       let paramIndex = 1;
 
@@ -246,7 +275,10 @@ export async function passTheme(id: string): Promise<ActionResult> {
 
   await prisma.theme.update({
     where: { id },
-    data: { isUsed: false },
+    data: {
+      status: "PENDING",
+      presentedAt: null,
+    },
   });
 
   revalidatePath("/draw");
@@ -286,7 +318,7 @@ export async function completeTheme(
     where: { id },
     data: {
       actualDuration: Math.round(clippedActual),
-      isUsed: true,
+      status: "COMPLETED",
     },
   });
 
@@ -324,4 +356,53 @@ export async function getThemes(): Promise<ThemeWithAuthor[]> {
   });
 
   return themes as ThemeWithAuthor[];
+}
+
+export async function startPresentation(id: string): Promise<ActionResult> {
+  const user = await getCurrentUser();
+  if (!user) {
+    return { success: false, error: "ログインが必要です。" };
+  }
+
+  if (!hasPermission(user, "draw_omikuji")) {
+    return { success: false, error: "権限がありません。" };
+  }
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      // すでに発表中のお題が存在しないか確認
+      const existingInProgress = await tx.theme.findFirst({
+        where: { status: "IN_PROGRESS" },
+      });
+
+      if (existingInProgress) {
+        throw new Error("すでに発表中のお題があります。");
+      }
+
+      // 対象お題が PENDING の場合にのみ IN_PROGRESS に更新
+      const result = await tx.theme.updateMany({
+        where: {
+          id,
+          status: "PENDING",
+        },
+        data: {
+          status: "IN_PROGRESS",
+          presentedAt: new Date(),
+        },
+      });
+
+      if (result.count === 0) {
+        throw new Error("お題が存在しないか、開始できない状態です。");
+      }
+    });
+  } catch (error) {
+    const message =
+      error instanceof Error
+        ? error.message
+        : "発表開始に失敗しました。";
+    return { success: false, error: message };
+  }
+  revalidatePath("/draw");
+  revalidatePath("/themes");
+  return { success: true };
 }

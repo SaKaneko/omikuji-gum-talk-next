@@ -62,16 +62,23 @@ enum ThemeType {
   GROUP_TALK
 }
 
+enum ThemeStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+}
+
 model Theme {
-  id               String    @id @default(uuid())
+  id               String      @id @default(uuid())
   subject          String
   content          String
-  type             ThemeType @default(LIGHTNING_TALK)
-  expectedDuration Int       @map("expected_duration")
-  actualDuration   Int?      @map("actual_duration")
-  isUsed           Boolean   @default(false) @map("is_used")
-  authorId         String    @map("author_id")
-  createdAt        DateTime  @default(now()) @map("created_at")
+  type             ThemeType   @default(LIGHTNING_TALK)
+  expectedDuration Int         @map("expected_duration")
+  actualDuration   Int?        @map("actual_duration")
+  status           ThemeStatus @default(PENDING)
+  authorId         String      @map("author_id")
+  presentedAt      DateTime?   @map("presented_at")
+  createdAt        DateTime    @default(now()) @map("created_at")
 
   author User @relation(fields: [authorId], references: [id])
 
