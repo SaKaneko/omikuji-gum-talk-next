@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { ThemeWithAuthor } from "@/types";
 import { deleteTheme, updateThemeStatus } from "@/actions/themes";
 import { getThemeDisplay } from "@/lib/themeDisplay";
+import { MarkdownRenderer } from "@/components/features/MarkdownRenderer";
 
 interface ThemeListProps {
   themes: ThemeWithAuthor[];
@@ -130,9 +131,9 @@ export function ThemeList({
 
                     {canViewDetail ? (
                       <>
-                        <p className="text-sm text-gray-600 whitespace-pre-wrap">
-                          {theme.content}
-                        </p>
+                        <div className="text-sm text-gray-600">
+                          <MarkdownRenderer content={theme.content} />
+                        </div>
                         <p className="text-xs text-gray-400 mt-2">
                           投稿者:{" "}
                           {theme.author.deletedAt

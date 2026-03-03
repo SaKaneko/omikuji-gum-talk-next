@@ -8,6 +8,7 @@
 Frontend と Backend API は Next.js フレームワーク内に統合される。
 
 - **Framework**: Next.js (React Server Components, App Router)
+- **Markdown Rendering**: `react-markdown` などを利用して、サニタイズ処理(`rehype-sanitize`等)を施しつつ、投稿されたMarkdown形式の本文をリッチテキストとして表示する。投稿画面のリアルタイムプレビュー用にも同レンダリング処理を共通利用し、実装レイアウトの一貫性を確保する。
 - **Database**: PostgreSQL
 - **Infrastructure**: Docker / Docker Compose
 
