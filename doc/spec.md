@@ -257,7 +257,7 @@ flowchart LR
   "type": "enum (LIGHTNING_TALK | PRESENTATION | GROUP_TALK - 将来的に拡張可能)",
   "expectedDuration": "number (分 - 予想所要時間)",
   "actualDuration": "number (分 - 実際にかかった時間, nullable)",
-  "isUsed": "enum (PENDING | IN_PROGRESS | COMPLETED - ステータス)",
+  "status": "enum (PENDING | IN_PROGRESS | COMPLETED - ステータス)",
   "createdAt": "timestamp",
   "authorId": "string (User.id - 投稿者ID)"
 }
