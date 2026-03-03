@@ -10,6 +10,7 @@ export async function GET() {
 
   const activeTheme = await prisma.theme.findFirst({
     where: { status: "IN_PROGRESS" },
+    orderBy: { presentedAt: "desc" },
     select: {
       id: true,
       subject: true,
