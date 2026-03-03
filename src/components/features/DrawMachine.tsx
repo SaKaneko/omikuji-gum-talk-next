@@ -5,6 +5,7 @@ import { ThemeType } from "@prisma/client";
 import { ThemeWithAuthor, DrawFilters } from "@/types";
 import { drawOmikuji, drawOldestTheme, passTheme, completeTheme } from "@/actions/themes";
 import { getThemeDisplay } from "@/lib/themeDisplay";
+import { MarkdownRenderer } from "@/components/features/MarkdownRenderer";
 
 type DrawState = "idle" | "drawing" | "result" | "presenting" | "completed";
 
@@ -255,9 +256,9 @@ export function DrawMachine() {
                 <h2 className="text-2xl font-bold text-gray-800 mb-3">
                   {drawnTheme.subject}
                 </h2>
-                <p className="text-gray-600 whitespace-pre-wrap mb-4 text-left">
-                  {drawnTheme.content}
-                </p>
+                <div className="text-gray-600 mb-4 text-left">
+                  <MarkdownRenderer content={drawnTheme.content} />
+                </div>
                 <div className="text-left mt-6">
                   <p className="text-sm text-gray-500">
                     投稿者:{" "}
@@ -280,9 +281,9 @@ export function DrawMachine() {
                   {drawnTheme.subject}
                 </h2>
                 <div className="bg-purple-50 border-l-4 border-purple-400 rounded-r-xl p-4 mb-4">
-                  <p className="text-gray-700 whitespace-pre-wrap text-left">
-                    {drawnTheme.content}
-                  </p>
+                  <div className="text-gray-700 text-left">
+                    <MarkdownRenderer content={drawnTheme.content} />
+                  </div>
                 </div>
                 <div className="text-left mt-6">
                   <p className="text-sm text-gray-500">
@@ -304,9 +305,9 @@ export function DrawMachine() {
                   {drawnTheme.subject}
                 </h2>
                 <div className="bg-green-50 rounded-2xl p-4 mb-4 relative">
-                  <p className="text-gray-600 whitespace-pre-wrap text-left">
-                    {drawnTheme.content}
-                  </p>
+                  <div className="text-gray-600 text-left">
+                    <MarkdownRenderer content={drawnTheme.content} />
+                  </div>
                   <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-green-50 rotate-45" />
                 </div>
                 <div className="text-left mt-6">
@@ -352,9 +353,9 @@ export function DrawMachine() {
             <h2 className="text-xl font-bold text-gray-800 mb-2">
               {drawnTheme.subject}
             </h2>
-            <p className="text-gray-600 whitespace-pre-wrap mb-4 text-left">
-              {drawnTheme.content}
-            </p>
+            <div className="text-gray-600 mb-4 text-left">
+              <MarkdownRenderer content={drawnTheme.content} />
+            </div>
             <p className="text-gray-500 text-sm mb-6">発表中...</p>
           </div>
 

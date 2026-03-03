@@ -4,12 +4,17 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { postTheme } from "@/actions/themes";
 import { ThemeType } from "@prisma/client";
+import { MarkdownRenderer } from "@/components/features/MarkdownRenderer";
+
+type Tab = "edit" | "preview";
 
 export default function PostPage() {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [type, setType] = useState<ThemeType>("LIGHTNING_TALK");
+  const [content, setContent] = useState("");
+  const [activeTab, setActiveTab] = useState<Tab>("edit");
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -77,15 +82,58 @@ export default function PostPage() {
         <div>
           <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-1">
             本文 <span className="text-red-500">*</span>
+            <span className="text-xs text-gray-400 ml-2">Markdown記法に対応しています</span>
           </label>
-          <textarea
-            id="content"
-            name="content"
-            required
-            rows={5}
-            className="input-field resize-y"
-            placeholder="お題の詳細を入力"
-          />
+
+          {/* Tab switcher */}
+          <div className="flex border-b border-gray-200 mb-0">
+            <button
+              type="button"
+              onClick={() => setActiveTab("edit")}
+              className={`px-4 py-2 text-sm font-medium transition-colors ${
+                activeTab === "edit"
+                  ? "text-primary-600 border-b-2 border-primary-600"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              ✏️ 編集
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("preview")}
+              className={`px-4 py-2 text-sm font-medium transition-colors ${
+                activeTab === "preview"
+                  ? "text-primary-600 border-b-2 border-primary-600"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              👁️ プレビュー
+            </button>
+          </div>
+
+          {activeTab === "edit" ? (
+            <textarea
+              id="content"
+              name="content"
+              required
+              rows={5}
+              className="input-field resize-y rounded-t-none"
+              placeholder="お題の詳細を入力（Markdown記法が使えます）"
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+            />
+          ) : (
+            <>
+              <input type="hidden" name="content" value={content} />
+              <div className="input-field min-h-[8rem] rounded-t-none">
+                {content ? (
+                  <MarkdownRenderer content={content} />
+                ) : (
+                  <p className="text-gray-400 text-sm">プレビューする内容がありません</p>
+                )}
+              </div>
+            </>
+          )}
         </div>
 
         <div>
