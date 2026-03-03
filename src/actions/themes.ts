@@ -368,14 +368,40 @@ export async function startPresentation(id: string): Promise<ActionResult> {
     return { success: false, error: "権限がありません。" };
   }
 
-  await prisma.theme.update({
-    where: { id },
-    data: {
-      status: "IN_PROGRESS",
-      presentedAt: new Date(),
-    },
-  });
+  try {
+    await prisma.$transaction(async (tx) => {
+      // すでに発表中のお題が存在しないか確認
+      const existingInProgress = await tx.theme.findFirst({
+        where: { status: "IN_PROGRESS" },
+      });
 
+      if (existingInProgress) {
+        throw new Error("すでに発表中のお題があります。");
+      }
+
+      // 対象お題が PENDING の場合にのみ IN_PROGRESS に更新
+      const result = await tx.theme.updateMany({
+        where: {
+          id,
+          status: "PENDING",
+        },
+        data: {
+          status: "IN_PROGRESS",
+          presentedAt: new Date(),
+        },
+      });
+
+      if (result.count === 0) {
+        throw new Error("お題が存在しないか、開始できない状態です。");
+      }
+    });
+  } catch (error) {
+    const message =
+      error instanceof Error
+        ? error.message
+        : "発表開始に失敗しました。";
+    return { success: false, error: message };
+  }
   revalidatePath("/draw");
   revalidatePath("/themes");
   return { success: true };
