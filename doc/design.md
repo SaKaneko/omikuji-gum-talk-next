@@ -107,18 +107,18 @@ erDiagram
 
 #### 2.2.5 Themes テーブル
 
-| カラム名          | 型        | 制約              | 説明                                                    |
-| :---------------- | :-------- | :---------------- | :------------------------------------------------------ |
-| id                | UUID      | PK                | お題ID                                                  |
-| subject           | VARCHAR   | NOT NULL          | 件名                                                    |
-| content           | TEXT      | NOT NULL          | 本文                                                    |
-| type              | VARCHAR   | NOT NULL          | お題タイプ (LIGHTNING_TALK / PRESENTATION / GROUP_TALK) |
-| expected_duration | INTEGER   | NOT NULL          | 予想所要時間(分)                                        |
-| actual_duration   | INTEGER   | NULL              | 実績所要時間(分)                                        |
-| status            | VARCHAR   | DEFAULT 'PENDING' | ステータス (PENDING / IN_PROGRESS / COMPLETED)          |
-| author_id         | UUID      | FK                | 投稿者ID (Users.id)                                     |
-| presented_at      | TIMESTAMP | NULL              | 発表開始日時 (IN_PROGRESS遷移時に記録)                  |
-| created_at        | TIMESTAMP | DEFAULT NOW()     | 作成日時                                                |
+| カラム名          | 型                  | 制約              | 説明                                                                 |
+| :---------------- | :------------------ | :---------------- | :------------------------------------------------------------------- |
+| id                | UUID                | PK                | お題ID                                                               |
+| subject           | VARCHAR             | NOT NULL          | 件名                                                                 |
+| content           | TEXT                | NOT NULL          | 本文                                                                 |
+| type              | VARCHAR             | NOT NULL          | お題タイプ (LIGHTNING_TALK / PRESENTATION / GROUP_TALK)              |
+| expected_duration | INTEGER             | NOT NULL          | 予想所要時間(分)                                                     |
+| actual_duration   | INTEGER             | NULL              | 実績所要時間(分)                                                     |
+| status            | ThemeStatus (enum)  | DEFAULT 'PENDING' | ステータス (PostgreSQL enum ThemeStatus: PENDING / IN_PROGRESS / COMPLETED) |
+| author_id         | UUID                | FK                | 投稿者ID (Users.id)                                                  |
+| presented_at      | TIMESTAMP           | NULL              | 発表開始日時 (IN_PROGRESS遷移時に記録)                               |
+| created_at        | TIMESTAMP           | DEFAULT NOW()     | 作成日時                                                             |
 
 ## 3. API設計 / Server Actions
 
