@@ -42,7 +42,7 @@ export function ActiveThemeBubble() {
       {/* 吹き出しアイコン */}
       <button
         onClick={() => setIsModalOpen(true)}
-        className="fixed bottom-6 right-6 z-40 flex items-center gap-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-4 py-3 rounded-2xl shadow-2xl hover:shadow-3xl hover:scale-105 transition-all duration-300 animate-bounce-gentle"
+        className="fixed bottom-6 right-6 z-40 flex items-center gap-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-4 py-3 rounded-2xl shadow-2xl hover:shadow-2xl hover:scale-105 transition-all duration-300 animate-bounce-gentle"
         title="発表中のお題を見る"
       >
         <span className="text-2xl">💬</span>
