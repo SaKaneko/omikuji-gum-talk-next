@@ -18,7 +18,7 @@ export default function PostPage() {
 
   const handleTabKey = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-      if (e.key === "Tab") {
+      if (e.key === "Tab" && !e.shiftKey) {
         e.preventDefault();
         const textarea = e.currentTarget;
         const { selectionStart, selectionEnd } = textarea;
