@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { postTheme } from "@/actions/themes";
 import { ThemeType } from "@prisma/client";
@@ -15,6 +15,27 @@ export default function PostPage() {
   const [type, setType] = useState<ThemeType>("LIGHTNING_TALK");
   const [content, setContent] = useState("");
   const [activeTab, setActiveTab] = useState<Tab>("edit");
+
+  const handleTabKey = useCallback(
+    (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+      if (e.key === "Tab") {
+        e.preventDefault();
+        const textarea = e.currentTarget;
+        const { selectionStart, selectionEnd } = textarea;
+        const newValue =
+          content.substring(0, selectionStart) +
+          "\t" +
+          content.substring(selectionEnd);
+        setContent(newValue);
+        // カーソル位置を挿入したタブの直後に移動
+        requestAnimationFrame(() => {
+          textarea.selectionStart = selectionStart + 1;
+          textarea.selectionEnd = selectionStart + 1;
+        });
+      }
+    },
+    [content]
+  );
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -121,6 +142,7 @@ export default function PostPage() {
               placeholder="お題の詳細を入力（Markdown記法が使えます）"
               value={content}
               onChange={(e) => setContent(e.target.value)}
+              onKeyDown={handleTabKey}
             />
           ) : (
             <>
