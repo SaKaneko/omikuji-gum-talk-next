@@ -16,6 +16,8 @@ export async function middleware(request: NextRequest) {
       if (payload) {
         const homeUrl = request.nextUrl.clone();
         homeUrl.pathname = "/";
+        homeUrl.search = "";
+        homeUrl.hash = "";
         return NextResponse.redirect(homeUrl);
       }
     }
@@ -43,6 +45,8 @@ export async function middleware(request: NextRequest) {
   if (pathname.startsWith("/admin") && payload.roleName !== "admin") {
     const homeUrl = request.nextUrl.clone();
     homeUrl.pathname = "/";
+    homeUrl.search = "";
+    homeUrl.hash = "";
     return NextResponse.redirect(homeUrl);
   }
 
