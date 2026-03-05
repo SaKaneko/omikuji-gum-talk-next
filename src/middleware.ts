@@ -29,6 +29,8 @@ export async function middleware(request: NextRequest) {
   if (!token) {
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = "/login";
+    loginUrl.search = "";
+    loginUrl.hash = "";
     return NextResponse.redirect(loginUrl);
   }
 
@@ -36,6 +38,8 @@ export async function middleware(request: NextRequest) {
   if (!payload) {
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = "/login";
+    loginUrl.search = "";
+    loginUrl.hash = "";
     const response = NextResponse.redirect(loginUrl);
     response.cookies.delete("auth-token");
     return response;
