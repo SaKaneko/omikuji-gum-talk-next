@@ -49,7 +49,7 @@ export default async function HomePage() {
       <div className="text-center mb-10">
         <div className="flex justify-center mb-4">
           <Image
-            src="/images/title.png"
+            src={`${process.env.NEXT_PUBLIC_BASE_PATH || ""}/images/title.png`}
             alt="ガムトーク"
             width={320}
             height={120}

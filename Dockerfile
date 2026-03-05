@@ -9,6 +9,8 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+ARG BASE_PATH=""
+ENV BASE_PATH=${BASE_PATH}
 RUN npx prisma generate
 RUN npm run build
 

@@ -14,7 +14,9 @@ export async function middleware(request: NextRequest) {
     if (token) {
       const payload = await verifyToken(token);
       if (payload) {
-        return NextResponse.redirect(new URL("/", request.url));
+        const homeUrl = request.nextUrl.clone();
+        homeUrl.pathname = "/";
+        return NextResponse.redirect(homeUrl);
       }
     }
     return NextResponse.next();
@@ -23,19 +25,25 @@ export async function middleware(request: NextRequest) {
   // Check authentication for protected routes
   const token = request.cookies.get("auth-token")?.value;
   if (!token) {
-    return NextResponse.redirect(new URL("/login", request.url));
+    const loginUrl = request.nextUrl.clone();
+    loginUrl.pathname = "/login";
+    return NextResponse.redirect(loginUrl);
   }
 
   const payload = await verifyToken(token);
   if (!payload) {
-    const response = NextResponse.redirect(new URL("/login", request.url));
+    const loginUrl = request.nextUrl.clone();
+    loginUrl.pathname = "/login";
+    const response = NextResponse.redirect(loginUrl);
     response.cookies.delete("auth-token");
     return response;
   }
 
   // Admin route protection
   if (pathname.startsWith("/admin") && payload.roleName !== "admin") {
-    return NextResponse.redirect(new URL("/", request.url));
+    const homeUrl = request.nextUrl.clone();
+    homeUrl.pathname = "/";
+    return NextResponse.redirect(homeUrl);
   }
 
   return NextResponse.next();

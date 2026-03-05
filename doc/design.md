@@ -8,6 +8,7 @@
 Frontend と Backend API は Next.js フレームワーク内に統合される。
 
 - **Framework**: Next.js (React Server Components, App Router)
+- **Base Path Routing**: 環境変数 `BASE_PATH` に基づいて Next.js の `basePath` 設定を適用し、リバースプロキシ配下などのサブパスでのホスティングに対応する。
 - **Markdown Rendering**: `react-markdown` などを利用して、サニタイズ処理(`rehype-sanitize`等)を施しつつ、投稿されたMarkdown形式の本文をリッチテキストとして表示する。投稿画面のリアルタイムプレビュー用にも同レンダリング処理を共通利用し、実装レイアウトの一貫性を確保する。
 - **Database**: PostgreSQL
 - **Infrastructure**: Docker / Docker Compose
@@ -107,18 +108,18 @@ erDiagram
 
 #### 2.2.5 Themes テーブル
 
-| カラム名          | 型                  | 制約              | 説明                                                                 |
-| :---------------- | :------------------ | :---------------- | :------------------------------------------------------------------- |
-| id                | UUID                | PK                | お題ID                                                               |
-| subject           | VARCHAR             | NOT NULL          | 件名                                                                 |
-| content           | TEXT                | NOT NULL          | 本文                                                                 |
-| type              | VARCHAR             | NOT NULL          | お題タイプ (LIGHTNING_TALK / PRESENTATION / GROUP_TALK)              |
-| expected_duration | INTEGER             | NOT NULL          | 予想所要時間(分)                                                     |
-| actual_duration   | INTEGER             | NULL              | 実績所要時間(分)                                                     |
-| status            | ThemeStatus (enum)  | DEFAULT 'PENDING' | ステータス (PostgreSQL enum ThemeStatus: PENDING / IN_PROGRESS / COMPLETED) |
-| author_id         | UUID                | FK                | 投稿者ID (Users.id)                                                  |
-| presented_at      | TIMESTAMP           | NULL              | 発表開始日時 (IN_PROGRESS遷移時に記録)                               |
-| created_at        | TIMESTAMP           | DEFAULT NOW()     | 作成日時                                                             |
+| カラム名          | 型                 | 制約              | 説明                                                                        |
+| :---------------- | :----------------- | :---------------- | :-------------------------------------------------------------------------- |
+| id                | UUID               | PK                | お題ID                                                                      |
+| subject           | VARCHAR            | NOT NULL          | 件名                                                                        |
+| content           | TEXT               | NOT NULL          | 本文                                                                        |
+| type              | VARCHAR            | NOT NULL          | お題タイプ (LIGHTNING_TALK / PRESENTATION / GROUP_TALK)                     |
+| expected_duration | INTEGER            | NOT NULL          | 予想所要時間(分)                                                            |
+| actual_duration   | INTEGER            | NULL              | 実績所要時間(分)                                                            |
+| status            | ThemeStatus (enum) | DEFAULT 'PENDING' | ステータス (PostgreSQL enum ThemeStatus: PENDING / IN_PROGRESS / COMPLETED) |
+| author_id         | UUID               | FK                | 投稿者ID (Users.id)                                                         |
+| presented_at      | TIMESTAMP          | NULL              | 発表開始日時 (IN_PROGRESS遷移時に記録)                                      |
+| created_at        | TIMESTAMP          | DEFAULT NOW()     | 作成日時                                                                    |
 
 ## 3. API設計 / Server Actions
 
