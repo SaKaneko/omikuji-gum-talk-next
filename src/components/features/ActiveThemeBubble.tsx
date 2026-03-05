@@ -13,7 +13,7 @@ export function ActiveThemeBubble() {
 
   const fetchActiveTheme = useCallback(async () => {
     try {
-      const res = await fetch("/api/themes/active");
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH || ""}/api/themes/active`);
       if (res.ok) {
         const data = await res.json();
         setActiveTheme(data);

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback, useTransition } from "react";
+import Image from "next/image";
 import { ThemeType } from "@prisma/client";
 import { ThemeWithAuthor, DrawFilters } from "@/types";
 import { drawOmikuji, drawOldestTheme, passTheme, completeTheme, startPresentation } from "@/actions/themes";
@@ -230,10 +231,12 @@ export function DrawMachine() {
       {/* Drawing animation */}
       {state === "drawing" && (
         <div className="fixed inset-0 z-50 bg-black/80 flex flex-col items-center justify-center">
-          <img
-            src="/images/omikuji.gif"
+          <Image
+            src={`${process.env.NEXT_PUBLIC_BASE_PATH || ""}/images/omikuji.gif`}
             alt="おみくじ抽選中"
-            className="absolute inset-0 w-full h-full object-contain"
+            fill
+            unoptimized
+            className="object-contain"
           />
           <div className="relative z-10 mt-auto mb-16 text-3xl font-bold text-white animate-pulse drop-shadow-lg">
             抽選中...
