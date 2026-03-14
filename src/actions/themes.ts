@@ -121,7 +121,6 @@ export async function updateTheme(
   revalidatePath("/themes");
   return { success: true };
 }
-}
 
 export async function deleteTheme(id: string): Promise<ActionResult> {
   const user = await getCurrentUser();
