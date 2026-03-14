@@ -32,7 +32,7 @@ model User {
 model ApiKey {
   id         String    @id @default(uuid())
   name       String
-  keyHash    String    @map("key_hash")
+  keyHash    String    @unique @map("key_hash")
   prefix     String
   userId     String    @map("user_id")
   createdAt  DateTime  @default(now()) @map("created_at")
@@ -41,6 +41,7 @@ model ApiKey {
 
   user User @relation(fields: [userId], references: [id])
 
+  @@index([userId])
   @@map("api_keys")
 }
 
