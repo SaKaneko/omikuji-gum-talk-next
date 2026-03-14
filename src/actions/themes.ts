@@ -98,8 +98,12 @@ export async function updateTheme(
     return { success: false, error: "LT（Lightning Talk）は最大10分までです。" };
   }
 
-  await prisma.theme.update({
-    where: { id },
+  const result = await prisma.theme.updateMany({
+    where: {
+      id,
+      authorId: user.id,
+      status: ThemeStatus.PENDING,
+    },
     data: {
       subject: data.subject,
       content: data.content,
@@ -107,6 +111,10 @@ export async function updateTheme(
       expectedDuration: data.expectedDuration,
     },
   });
+
+  if (result.count === 0) {
+    return { success: false, error: "お題が見つからないか、編集できない状態です。" };
+  }
 
   revalidatePath("/themes");
   return { success: true };
