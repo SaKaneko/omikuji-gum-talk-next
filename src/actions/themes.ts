@@ -32,12 +32,7 @@ export async function expireTimedOutThemes(): Promise<number> {
   return result.count;
 }
 
-export async function postTheme(data: ThemeFormData): Promise<ActionResult> {
-  const user = await getCurrentUser();
-  if (!user) {
-    return { success: false, error: "ログインが必要です。" };
-  }
-
+function validateThemeFormData(data: ThemeFormData): ActionResult | null {
   if (!data.subject || !data.content) {
     return { success: false, error: "件名と本文を入力してください。" };
   }
@@ -50,6 +45,20 @@ export async function postTheme(data: ThemeFormData): Promise<ActionResult> {
     return { success: false, error: "LT（Lightning Talk）は最大10分までです。" };
   }
 
+  return null;
+}
+
+export async function postTheme(data: ThemeFormData): Promise<ActionResult> {
+  const user = await getCurrentUser();
+  if (!user) {
+    return { success: false, error: "ログインが必要です。" };
+  }
+
+  const validationResult = validateThemeFormData(data);
+  if (validationResult) {
+    return validationResult;
+  }
+
   await prisma.theme.create({
     data: {
       subject: data.subject,
@@ -59,6 +68,55 @@ export async function postTheme(data: ThemeFormData): Promise<ActionResult> {
       authorId: user.id,
     },
   });
+
+  revalidatePath("/themes");
+  return { success: true };
+}
+
+export async function updateTheme(
+  id: string,
+  data: ThemeFormData
+): Promise<ActionResult> {
+  const user = await getCurrentUser();
+  if (!user) {
+    return { success: false, error: "ログインが必要です。" };
+  }
+
+  const theme = await prisma.theme.findUnique({ where: { id } });
+  if (!theme) {
+    return { success: false, error: "お題が見つかりません。" };
+  }
+
+  if (theme.authorId !== user.id) {
+    return { success: false, error: "自分の投稿のみ編集できます。" };
+  }
+
+  if (theme.status !== "PENDING") {
+    return { success: false, error: "未消化のお題のみ編集できます。" };
+  }
+
+  const validationResult = validateThemeFormData(data);
+  if (validationResult) {
+    return validationResult;
+  }
+
+  const result = await prisma.theme.updateMany({
+    where: {
+      id,
+      authorId: user.id,
+      status: ThemeStatus.PENDING,
+    },
+    data: {
+      subject: data.subject,
+      content: data.content,
+      type: data.type,
+      expectedDuration: data.expectedDuration,
+    },
+  });
+
+  if (result.count === 0) {
+    return { success: false, error: "お題が見つからないか、編集できない状態です。" };
+  }
 
   revalidatePath("/themes");
   return { success: true };

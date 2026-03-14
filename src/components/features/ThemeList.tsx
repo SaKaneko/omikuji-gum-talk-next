@@ -3,9 +3,10 @@
 import { useState, useTransition } from "react";
 import { ThemeWithAuthor } from "@/types";
 import { ThemeStatus } from "@prisma/client";
-import { deleteTheme, updateThemeStatus } from "@/actions/themes";
+import { deleteTheme, updateThemeStatus, updateTheme } from "@/actions/themes";
 import { getThemeDisplay } from "@/lib/themeDisplay";
 import { MarkdownRenderer } from "@/components/features/MarkdownRenderer";
+import { ThemeForm } from "@/components/features/ThemeForm";
 
 interface ThemeListProps {
   themes: ThemeWithAuthor[];
@@ -32,6 +33,7 @@ export function ThemeList({
 }: ThemeListProps) {
   const [filter, setFilter] = useState<FilterStatus>("pending");
   const [isPending, startTransition] = useTransition();
+  const [editingTheme, setEditingTheme] = useState<ThemeWithAuthor | null>(null);
 
   const filteredThemes = themes.filter((theme) => {
     if (filter === "completed") return theme.status === "COMPLETED";
@@ -154,6 +156,15 @@ export function ThemeList({
                   </div>
 
                   <div className="flex flex-col gap-2 shrink-0">
+                    {isOwnPost && theme.status === "PENDING" && (
+                      <button
+                        onClick={() => setEditingTheme(theme)}
+                        disabled={isPending}
+                        className="text-xs px-3 py-1 rounded-md bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors disabled:opacity-50"
+                      >
+                        編集
+                      </button>
+                    )}
                     {isAdmin && (
                       <button
                         onClick={() =>
@@ -181,6 +192,65 @@ export function ThemeList({
           })}
         </div>
       )}
+
+      {/* Edit Modal */}
+      {editingTheme && (
+        <ThemeEditModal
+          theme={editingTheme}
+          onClose={() => setEditingTheme(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+function ThemeEditModal({
+  theme,
+  onClose,
+}: {
+  theme: ThemeWithAuthor;
+  onClose: () => void;
+}) {
+  return (
+    <div
+      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold text-gray-800">📝 お題を編集</h2>
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-gray-600 text-2xl leading-none"
+            >
+              &times;
+            </button>
+          </div>
+
+          <ThemeForm
+            initialValues={{
+              subject: theme.subject,
+              content: theme.content,
+              type: theme.type,
+              expectedDuration: theme.expectedDuration,
+            }}
+            onSubmit={async (data) => {
+              const result = await updateTheme(theme.id, data);
+              if (result.success) {
+                onClose();
+              }
+              return result;
+            }}
+            onCancel={onClose}
+            submitLabel="💾 更新する"
+            pendingLabel="更新中..."
+          />
+        </div>
+      </div>
     </div>
   );
 }
