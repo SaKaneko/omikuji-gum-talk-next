@@ -12,7 +12,7 @@ datasource db {
 
 model User {
   id                   String    @id @default(uuid())
-  name                 String    @unique
+  name                 String
   displayName          String    @map("display_name")
   email                String?
   roleId               String    @map("role_id")
@@ -24,6 +24,7 @@ model User {
   role   Role    @relation(fields: [roleId], references: [id])
   themes Theme[]
 
+  @@unique([name, deletedAt])
   @@map("users")
 }
 
