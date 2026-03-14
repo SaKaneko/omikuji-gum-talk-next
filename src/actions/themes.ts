@@ -32,12 +32,7 @@ export async function expireTimedOutThemes(): Promise<number> {
   return result.count;
 }
 
-export async function postTheme(data: ThemeFormData): Promise<ActionResult> {
-  const user = await getCurrentUser();
-  if (!user) {
-    return { success: false, error: "ログインが必要です。" };
-  }
-
+function validateThemeFormData(data: ThemeFormData): ActionResult | null {
   if (!data.subject || !data.content) {
     return { success: false, error: "件名と本文を入力してください。" };
   }
@@ -48,6 +43,20 @@ export async function postTheme(data: ThemeFormData): Promise<ActionResult> {
 
   if (data.type === "LIGHTNING_TALK" && data.expectedDuration > 10) {
     return { success: false, error: "LT（Lightning Talk）は最大10分までです。" };
+  }
+
+  return null;
+}
+
+export async function postTheme(data: ThemeFormData): Promise<ActionResult> {
+  const user = await getCurrentUser();
+  if (!user) {
+    return { success: false, error: "ログインが必要です。" };
+  }
+
+  const validationResult = validateThemeFormData(data);
+  if (validationResult) {
+    return validationResult;
   }
 
   await prisma.theme.create({
@@ -86,16 +95,9 @@ export async function updateTheme(
     return { success: false, error: "未消化のお題のみ編集できます。" };
   }
 
-  if (!data.subject || !data.content) {
-    return { success: false, error: "件名と本文を入力してください。" };
-  }
-
-  if (data.expectedDuration <= 0) {
-    return { success: false, error: "予想所要時間は正の数を入力してください。" };
-  }
-
-  if (data.type === "LIGHTNING_TALK" && data.expectedDuration > 10) {
-    return { success: false, error: "LT（Lightning Talk）は最大10分までです。" };
+  const validationResult = validateThemeFormData(data);
+  if (validationResult) {
+    return validationResult;
   }
 
   const result = await prisma.theme.updateMany({
@@ -118,6 +120,7 @@ export async function updateTheme(
 
   revalidatePath("/themes");
   return { success: true };
+}
 }
 
 export async function deleteTheme(id: string): Promise<ActionResult> {
