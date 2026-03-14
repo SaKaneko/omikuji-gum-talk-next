@@ -5,6 +5,7 @@ import { ThemeWithAuthor } from "@/types";
 import { ThemeStatus } from "@prisma/client";
 import { updateUserRole, deleteUser } from "@/actions/users";
 import { deleteTheme, updateThemeStatus } from "@/actions/themes";
+import { createApiKey, revokeApiKey, deleteApiKey, ApiKeyInfo } from "@/actions/apiKeys";
 import { getThemeDisplay } from "@/lib/themeDisplay";
 
 interface User {
@@ -18,13 +19,17 @@ interface User {
 interface AdminPanelProps {
   users: User[];
   themes: ThemeWithAuthor[];
+  apiKeys: ApiKeyInfo[];
 }
 
-type Tab = "users" | "themes";
+type Tab = "users" | "themes" | "apikeys";
 
-export function AdminPanel({ users, themes }: AdminPanelProps) {
+export function AdminPanel({ users, themes, apiKeys }: AdminPanelProps) {
   const [activeTab, setActiveTab] = useState<Tab>("users");
   const [isPending, startTransition] = useTransition();
+  const [newKeyName, setNewKeyName] = useState("");
+  const [generatedKey, setGeneratedKey] = useState<string | null>(null);
+  const [apiKeyError, setApiKeyError] = useState<string | null>(null);
 
   const handleRoleChange = (userId: string, newRole: string) => {
     startTransition(async () => {
@@ -54,6 +59,35 @@ export function AdminPanel({ users, themes }: AdminPanelProps) {
     });
   };
 
+  const handleCreateApiKey = () => {
+    if (!newKeyName.trim()) return;
+    setApiKeyError(null);
+    setGeneratedKey(null);
+    startTransition(async () => {
+      const result = await createApiKey(newKeyName.trim());
+      if (result.success && result.apiKey) {
+        setGeneratedKey(result.apiKey);
+        setNewKeyName("");
+      } else {
+        setApiKeyError(result.error ?? "エラーが発生しました。");
+      }
+    });
+  };
+
+  const handleRevokeApiKey = (keyId: string) => {
+    if (!confirm("このAPIキーを無効化しますか？")) return;
+    startTransition(async () => {
+      await revokeApiKey(keyId);
+    });
+  };
+
+  const handleDeleteApiKey = (keyId: string) => {
+    if (!confirm("このAPIキーを完全に削除しますか？")) return;
+    startTransition(async () => {
+      await deleteApiKey(keyId);
+    });
+  };
+
   return (
     <div>
       <h1 className="text-2xl font-bold text-gray-800 mb-6">⚙️ 管理画面</h1>
@@ -79,6 +113,16 @@ export function AdminPanel({ users, themes }: AdminPanelProps) {
           }`}
         >
           📋 お題管理 ({themes.length})
+        </button>
+        <button
+          onClick={() => setActiveTab("apikeys")}
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            activeTab === "apikeys"
+              ? "bg-primary-600 text-white"
+              : "bg-white text-gray-600 hover:bg-gray-100"
+          }`}
+        >
+          🔑 APIキー ({apiKeys.filter((k) => !k.revokedAt).length})
         </button>
       </div>
 
@@ -208,6 +252,121 @@ export function AdminPanel({ users, themes }: AdminPanelProps) {
                       onClick={() => handleDeleteTheme(theme.id)}
                       disabled={isPending}
                       className="text-xs px-3 py-1 rounded-md bg-red-50 text-red-600 hover:bg-red-100 transition-colors disabled:opacity-50"
+                    >
+                      削除
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      )}
+
+      {/* API Keys management */}
+      {activeTab === "apikeys" && (
+        <div className="space-y-4">
+          {/* Create new key */}
+          <div className="card">
+            <h3 className="text-sm font-semibold text-gray-700 mb-3">新しいAPIキーを発行</h3>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={newKeyName}
+                onChange={(e) => setNewKeyName(e.target.value)}
+                placeholder="APIキーの名前（例: CI/CD用）"
+                className="input-field flex-1"
+                maxLength={100}
+              />
+              <button
+                onClick={handleCreateApiKey}
+                disabled={isPending || !newKeyName.trim()}
+                className="btn-primary whitespace-nowrap"
+              >
+                {isPending ? "発行中..." : "発行"}
+              </button>
+            </div>
+            {apiKeyError && (
+              <p className="text-sm text-red-600 mt-2">{apiKeyError}</p>
+            )}
+          </div>
+
+          {/* Show generated key */}
+          {generatedKey && (
+            <div className="card bg-green-50 border border-green-200">
+              <p className="text-sm font-semibold text-green-800 mb-2">
+                APIキーが発行されました。この値は一度だけ表示されます。安全な場所に保存してください。
+              </p>
+              <div className="flex items-center gap-2">
+                <code className="flex-1 text-xs bg-white p-2 rounded border border-green-300 break-all select-all">
+                  {generatedKey}
+                </code>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(generatedKey);
+                  }}
+                  className="text-xs px-3 py-1.5 rounded-md bg-green-100 text-green-700 hover:bg-green-200 transition-colors whitespace-nowrap"
+                >
+                  コピー
+                </button>
+              </div>
+              <p className="text-xs text-green-600 mt-2">
+                使用方法: <code className="bg-white px-1 rounded">Authorization: Bearer {generatedKey.substring(0, 12)}...</code> または{" "}
+                <code className="bg-white px-1 rounded">X-API-Key: {generatedKey.substring(0, 12)}...</code>
+              </p>
+            </div>
+          )}
+
+          {/* Key list */}
+          {apiKeys.length === 0 ? (
+            <div className="card text-center py-8 text-gray-400">
+              APIキーがありません
+            </div>
+          ) : (
+            apiKeys.map((key) => (
+              <div
+                key={key.id}
+                className={`card ${key.revokedAt ? "opacity-60" : ""}`}
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-sm">{key.name}</span>
+                      <code className="text-xs text-gray-400">{key.prefix}...</code>
+                      {key.revokedAt ? (
+                        <span className="badge bg-red-100 text-red-700">無効</span>
+                      ) : (
+                        <span className="badge bg-green-100 text-green-700">有効</span>
+                      )}
+                    </div>
+                    <p className="text-xs text-gray-400 mt-1">
+                      作成: {new Date(key.createdAt).toLocaleDateString("ja-JP")}
+                      {key.lastUsedAt && (
+                        <>
+                          {" · "}最終使用: {new Date(key.lastUsedAt).toLocaleDateString("ja-JP")}
+                        </>
+                      )}
+                      {key.revokedAt && (
+                        <>
+                          {" · "}無効化: {new Date(key.revokedAt).toLocaleDateString("ja-JP")}
+                        </>
+                      )}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {!key.revokedAt && (
+                      <button
+                        onClick={() => handleRevokeApiKey(key.id)}
+                        disabled={isPending}
+                        className="text-xs px-3 py-1.5 rounded-md bg-amber-50 text-amber-600 hover:bg-amber-100 transition-colors disabled:opacity-50"
+                      >
+                        無効化
+                      </button>
+                    )}
+                    <button
+                      onClick={() => handleDeleteApiKey(key.id)}
+                      disabled={isPending}
+                      className="text-xs px-3 py-1.5 rounded-md bg-red-50 text-red-600 hover:bg-red-100 transition-colors disabled:opacity-50"
                     >
                       削除
                     </button>

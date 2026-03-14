@@ -2,6 +2,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { getUsers } from "@/actions/users";
 import { getThemes } from "@/actions/themes";
+import { getApiKeys } from "@/actions/apiKeys";
 import { AdminPanel } from "@/components/features/AdminPanel";
 
 export default async function AdminPage() {
@@ -10,7 +11,11 @@ export default async function AdminPage() {
     redirect("/");
   }
 
-  const [users, themes] = await Promise.all([getUsers(), getThemes()]);
+  const [users, themes, apiKeys] = await Promise.all([
+    getUsers(),
+    getThemes(),
+    getApiKeys(),
+  ]);
 
-  return <AdminPanel users={users} themes={themes} />;
+  return <AdminPanel users={users} themes={themes} apiKeys={apiKeys} />;
 }

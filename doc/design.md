@@ -34,6 +34,7 @@ erDiagram
     Role ||--o{ RolePermission : "has"
     Permission ||--o{ RolePermission : "is assigned to"
     User ||--o{ Theme : "posts"
+    User ||--o{ ApiKey : "owns"
 
     User {
         string id PK "UUID"
@@ -70,6 +71,16 @@ erDiagram
         timestamp presentedAt "nullable, 発表開始日時"
         timestamp createdAt
         string authorId FK
+    }
+    ApiKey {
+        string id PK "UUID"
+        string name "用途識別名"
+        string keyHash "SHA-256ハッシュ"
+        string prefix "キー先頭12文字"
+        string userId FK "Users.id"
+        timestamp createdAt
+        timestamp lastUsedAt "nullable"
+        timestamp revokedAt "nullable"
     }
 ```
 
@@ -126,6 +137,19 @@ erDiagram
 | presented_at      | TIMESTAMP          | NULL              | 発表開始日時 (IN_PROGRESS遷移時に記録)                                      |
 | created_at        | TIMESTAMP          | DEFAULT NOW()     | 作成日時                                                                    |
 
+#### 2.2.6 ApiKeys テーブル
+
+| カラム名     | 型        | 制約          | 説明                                     |
+| :----------- | :-------- | :------------ | :--------------------------------------- |
+| id           | UUID      | PK            | APIキーID                                |
+| name         | VARCHAR   | NOT NULL      | 用途識別名                               |
+| key_hash     | VARCHAR   | NOT NULL      | APIキーのSHA-256ハッシュ値               |
+| prefix       | VARCHAR   | NOT NULL      | APIキーの先頭12文字（識別用）            |
+| user_id      | UUID      | FK, NOT NULL  | 発行者ID (Users.id)                      |
+| created_at   | TIMESTAMP | DEFAULT NOW() | 作成日時                                 |
+| last_used_at | TIMESTAMP | NULL          | 最終使用日時                             |
+| revoked_at   | TIMESTAMP | NULL          | 無効化日時（設定済みの場合はキーが無効） |
+
 ## 3. API設計 / Server Actions
 
 Next.js App Router の機能を活用し、クライアントからの操作は Server Actions を主体に実装する。
@@ -171,27 +195,46 @@ Next.js App Router の機能を活用し、クライアントからの操作は 
   - 処理: 入力チェック → 表示名必須チェック → メールアドレス形式チェック（入力時）→ DB更新
   - 戻り値: `{ success: boolean, error?: string }`
 
+#### API Key Actions (Admin)
+
+- `getApiKeys()`: ログインadminユーザー自身が発行したAPIキー一覧を取得
+- `createApiKey(name)`: 新しいAPIキーを発行。生のキーを一度だけ返却し、DBにはSHA-256ハッシュを保存
+  - 戻り値: `{ success: boolean, error?: string, apiKey?: string }`
+- `revokeApiKey(keyId)`: APIキーを無効化（`revokedAt` を設定）
+- `deleteApiKey(keyId)`: APIキーレコードを完全に削除
+
 ### 3.2 Route Handlers (API Endpoints)
 
 必要に応じて以下のエンドポイントを実装する。基本的には Server Actions で完結させる方針とする。
 
 - `GET /api/me`: 現在のログインユーザー情報取得 (Client Component初期化用など)
-- `GET /api/users`: ユーザー一覧取得（認証不要）
+  - 認証: Cookie認証またはAPIキー認証
+- `GET /api/users`: ユーザー一覧取得（admin権限必要）
+  - 認証: Cookie認証またはAPIキー認証
   - レスポンス: `Array<{ displayName, email }>`
   - 有効なユーザー（`deletedAt` が `null`）のみ返却する。
-- `GET /api/users/admin`: 管理ユーザー一覧取得（認証不要）
+- `GET /api/users/admin`: 管理ユーザー一覧取得（admin権限必要）
+  - 認証: Cookie認証またはAPIキー認証
   - レスポンス: `Array<{ displayName, email }>`
   - admin ロールを持つ有効なユーザーのみ返却する。
 - `GET /api/themes/remaining`: 未消化のお題統計情報取得（認証不要）
   - レスポンス: `{ count: number, totalExpectedDuration: number, totalCorrectedDuration: number }`
 - `GET /api/themes/active`: 現在発表中(`status='IN_PROGRESS'`)のお題を取得
+  - 認証: Cookie認証またはAPIキー認証
   - レスポンス: `{ id, subject, content, type, ... }` （ポーリングやSWRを利用してクライアントから定期購読する）
 
 ### 3.3 認証機構 (Authentication Mechanism)
 
-- **方式**: HttpOnly Cookie (JWT または Session ID)
-- **ライブラリ**: NextAuth.js (Auth.js) v5 またはカスタム実装
-- **Middleware**: `middleware.ts` を使用して、保護されたルートへのアクセス制御を行う。
+- **方式1: HttpOnly Cookie (JWT)**
+  - ブラウザからのリクエスト用。ログイン時にJWTを発行し、HttpOnly Cookieに保存する。
+  - **ライブラリ**: `jose` (JWT生成・検証)
+- **方式2: APIキー認証**
+  - 外部システム連携用。adminユーザーのみが発行可能。
+  - APIリクエスト時に `Authorization: Bearer ogt_...` または `X-API-Key: ogt_...` ヘッダーで送信。
+  - APIキーはSHA-256でハッシュ化してDBに保存。生のキーは発行時に一度だけ表示。
+  - キー使用時に `lastUsedAt` を更新。無効化（`revokedAt` 設定）済みのキーでの認証は拒否。
+- **Middleware**: `middleware.ts` を使用して、保護されたルートへのアクセス制御を行う。APIルートはMiddlewareの対象外とし、各Route Handler内で認証を行う。
+- **認証優先度**: APIキーヘッダーが存在する場合はAPIキー認証を優先し、ない場合はCookie認証にフォールバックする。
 
 ## 4. フロントエンド設計 (Frontend Design)
 
@@ -217,7 +260,7 @@ src/ (またはルート直下)
   │   ├── ui/          # 汎用UI (Button, Input etc - shadcn/ui想定)
   │   └── features/    # 機能単位 (ThemeCard, DrawDisplay, SettingsPanel etc)
   ├── lib/             # ユーティリティ (prisma client, auth config)
-  ├── actions/         # Server Actions (auth.ts, themes.ts, settings.ts)
+  ├── actions/         # Server Actions (auth.ts, themes.ts, settings.ts, apiKeys.ts)
   └── types/           # 型定義
 ```
 
@@ -272,11 +315,12 @@ src/ (またはルート直下)
 
 ### 6.1 権限マトリクス
 
-| 機能           | Admin | General | 備考           |
-| :------------- | :---: | :-----: | :------------- |
-| 投稿           |   ○   |    ○    |                |
-| 閲覧(自)       |   ○   |    ○    |                |
-| 閲覧(他・詳細) |   ○   |    ☓    | 他人は件名のみ |
-| くじ引き       |   ○   |    ☓    | 権限設定による |
-| 削除(他)       |   ○   |    ☓    |                |
-| 設定変更(自)   |   ○   |    ○    | 自身の設定のみ |
+| 機能           | Admin | General | 備考            |
+| :------------- | :---: | :-----: | :-------------- |
+| 投稿           |   ○   |    ○    |                 |
+| 閲覧(自)       |   ○   |    ○    |                 |
+| 閲覧(他・詳細) |   ○   |    ☓    | 他人は件名のみ  |
+| くじ引き       |   ○   |    ☓    | 権限設定による  |
+| 削除(他)       |   ○   |    ☓    |                 |
+| 設定変更(自)   |   ○   |    ○    | 自身の設定のみ  |
+| APIキー管理    |   ○   |    ☓    | adminのみ発行可 |
