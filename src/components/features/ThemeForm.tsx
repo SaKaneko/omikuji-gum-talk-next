@@ -48,6 +48,8 @@ export function ThemeForm({
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    // 新しい送信ごとに古いエラー表示をクリアする
+    setError(null);
     const formData = new FormData(e.currentTarget);
     const subject = formData.get("subject") as string;
     const expectedDuration = parseInt(formData.get("expectedDuration") as string);
@@ -77,6 +79,9 @@ export function ThemeForm({
 
       if (!result.success) {
         setError(result.error || "操作に失敗しました。");
+      } else {
+        // 成功時にもエラーをクリアして再利用時の挙動を安定させる
+        setError(null);
       }
     });
   };
