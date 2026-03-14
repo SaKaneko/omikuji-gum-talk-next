@@ -275,7 +275,7 @@ export function DrawMachine() {
                     投稿者:{" "}
                     {drawnTheme.author.deletedAt
                       ? "削除されたユーザー"
-                      : drawnTheme.author.name}
+                      : drawnTheme.author.displayName}
                   </p>
                   <p className="text-xs text-gray-400 mt-1">
                     予想: {drawnTheme.expectedDuration}分
@@ -301,7 +301,7 @@ export function DrawMachine() {
                     投稿者:{" "}
                     {drawnTheme.author.deletedAt
                       ? "削除されたユーザー"
-                      : drawnTheme.author.name}
+                      : drawnTheme.author.displayName}
                   </p>
                   <p className="text-xs text-gray-400 mt-1">
                     予想: {drawnTheme.expectedDuration}分
@@ -326,7 +326,7 @@ export function DrawMachine() {
                     投稿者:{" "}
                     {drawnTheme.author.deletedAt
                       ? "削除されたユーザー"
-                      : drawnTheme.author.name}
+                      : drawnTheme.author.displayName}
                   </p>
                   <p className="text-xs text-gray-400 mt-1">
                     予想: {drawnTheme.expectedDuration}分

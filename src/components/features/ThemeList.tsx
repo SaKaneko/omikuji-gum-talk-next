@@ -141,20 +141,16 @@ export function ThemeList({
                         <div className="text-sm text-gray-600">
                           <MarkdownRenderer content={theme.content} />
                         </div>
-                        <p className="text-xs text-gray-400 mt-2">
-                          投稿者:{" "}
-                          {theme.author.deletedAt
-                            ? "削除されたユーザー"
-                            : theme.author.name}
-                          {" · "}
-                          {new Date(theme.createdAt).toLocaleDateString("ja-JP")}
-                        </p>
                       </>
-                    ) : (
-                      <p className="text-xs text-gray-400 mt-1">
-                        {new Date(theme.createdAt).toLocaleDateString("ja-JP")}
-                      </p>
-                    )}
+                    ) : null}
+                    <p className="text-xs text-gray-400 mt-2">
+                      投稿者:{" "}
+                      {theme.author.deletedAt
+                        ? "削除されたユーザー"
+                        : theme.author.displayName}
+                      {" · "}
+                      {new Date(theme.createdAt).toLocaleDateString("ja-JP")}
+                    </p>
                   </div>
 
                   <div className="flex flex-col gap-2 shrink-0">

@@ -36,8 +36,36 @@ export default function RegisterPage() {
               minLength={2}
               maxLength={20}
               className="input-field"
-              placeholder="2〜20文字で入力"
+              placeholder="2〜20文字で入力（ログインID）"
               autoComplete="username"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="displayName" className="block text-sm font-medium text-gray-700 mb-1">
+              表示名
+            </label>
+            <input
+              id="displayName"
+              name="displayName"
+              type="text"
+              required
+              className="input-field"
+              placeholder="他のユーザーに表示される名前"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+              メールアドレス <span className="text-gray-400 font-normal">(任意)</span>
+            </label>
+            <input
+              id="email"
+              name="email"
+              type="email"
+              className="input-field"
+              placeholder="example@example.com"
+              autoComplete="email"
             />
           </div>
 

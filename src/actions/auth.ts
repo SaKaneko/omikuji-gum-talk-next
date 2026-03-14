@@ -39,6 +39,7 @@ export async function login(
   const token = await createToken({
     userId: user.id,
     name: user.name,
+    displayName: user.displayName,
     roleName: user.role.name,
   });
 
@@ -56,11 +57,17 @@ export async function register(
   formData: FormData
 ): Promise<ActionResult> {
   const name = formData.get("name") as string;
+  const displayName = formData.get("displayName") as string;
+  const email = (formData.get("email") as string) || null;
   const password = formData.get("password") as string;
   const confirmPassword = formData.get("confirmPassword") as string;
 
   if (!name || !password) {
     return { success: false, error: "ユーザー名とパスワードを入力してください。" };
+  }
+
+  if (!displayName || displayName.trim() === "") {
+    return { success: false, error: "表示名を入力してください。" };
   }
 
   if (name.length < 2 || name.length > 20) {
@@ -73,6 +80,10 @@ export async function register(
 
   if (password !== confirmPassword) {
     return { success: false, error: "パスワードが一致しません。" };
+  }
+
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return { success: false, error: "メールアドレスの形式が正しくありません。" };
   }
 
   const existingUser = await prisma.user.findFirst({
@@ -97,6 +108,8 @@ export async function register(
   const user = await prisma.user.create({
     data: {
       name,
+      displayName: displayName.trim(),
+      email,
       roleId: generalRole.id,
       passwordHash,
       salt,
@@ -106,6 +119,7 @@ export async function register(
   const token = await createToken({
     userId: user.id,
     name: user.name,
+    displayName: user.displayName,
     roleName: generalRole.name,
   });
 

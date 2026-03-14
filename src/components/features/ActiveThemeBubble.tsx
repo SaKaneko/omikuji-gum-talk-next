@@ -91,7 +91,7 @@ export function ActiveThemeBubble() {
                   投稿者:{" "}
                   {activeTheme.author.deletedAt
                     ? "削除されたユーザー"
-                    : activeTheme.author.name}
+                    : activeTheme.author.displayName}
                 </p>
                 <p>⏱ 予想: {activeTheme.expectedDuration}分</p>
               </div>

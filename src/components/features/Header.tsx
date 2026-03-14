@@ -61,7 +61,7 @@ export function Header({ user }: HeaderProps) {
                   : "text-gray-600 hover:text-primary-600 hover:underline"
               }`}
             >
-              👤 {user.name}
+              👤 {user.displayName}
               {user.roleName === "admin" && (
                 <span className="ml-1 badge bg-purple-100 text-purple-700">Admin</span>
               )}

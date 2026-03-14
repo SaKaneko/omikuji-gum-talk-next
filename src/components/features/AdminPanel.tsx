@@ -10,6 +10,7 @@ import { getThemeDisplay } from "@/lib/themeDisplay";
 interface User {
   id: string;
   name: string;
+  displayName: string;
   role: { id: string; name: string };
   timeBiasCoefficient: number;
 }
@@ -89,7 +90,8 @@ export function AdminPanel({ users, themes }: AdminPanelProps) {
               <div className="flex items-center justify-between">
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="font-semibold">{u.name}</span>
+                    <span className="font-semibold">{u.displayName}</span>
+                    <span className="text-xs text-gray-400">@{u.name}</span>
                     <span
                       className={`badge ${
                         u.role.name === "admin"
@@ -115,7 +117,7 @@ export function AdminPanel({ users, themes }: AdminPanelProps) {
                     <option value="general">general</option>
                   </select>
                   <button
-                    onClick={() => handleDeleteUser(u.id, u.name)}
+                    onClick={() => handleDeleteUser(u.id, u.displayName)}
                     disabled={isPending}
                     className="text-xs px-3 py-1.5 rounded-md bg-red-50 text-red-600 hover:bg-red-100 transition-colors disabled:opacity-50"
                   >
@@ -186,7 +188,7 @@ export function AdminPanel({ users, themes }: AdminPanelProps) {
                       投稿者:{" "}
                       {theme.author.deletedAt
                         ? "削除されたユーザー"
-                        : theme.author.name}
+                        : theme.author.displayName}
                       {" · "}
                       予想: {theme.expectedDuration}分
                       {theme.actualDuration && ` · 実績: ${theme.actualDuration}分`}
