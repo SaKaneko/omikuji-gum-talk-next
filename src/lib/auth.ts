@@ -13,12 +13,14 @@ const TOKEN_EXPIRY = "24h";
 export interface JWTPayload {
   userId: string;
   name: string;
+  displayName: string;
   roleName: string;
 }
 
 export interface SessionUser {
   id: string;
   name: string;
+  displayName: string;
   roleName: string;
   permissions: string[];
 }
@@ -115,6 +117,7 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
   return {
     id: user.id,
     name: user.name,
+    displayName: user.displayName,
     roleName: user.role.name,
     permissions,
   };

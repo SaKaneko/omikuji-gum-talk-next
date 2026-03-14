@@ -164,6 +164,7 @@ export async function drawOmikuji(
             select: {
               id: true,
               name: true,
+              displayName: true,
               timeBiasCoefficient: true,
               deletedAt: true,
             },
@@ -242,6 +243,7 @@ export async function drawOldestTheme(
             select: {
               id: true,
               name: true,
+              displayName: true,
               timeBiasCoefficient: true,
               deletedAt: true,
             },
@@ -347,6 +349,7 @@ export async function getThemes(): Promise<ThemeWithAuthor[]> {
         select: {
           id: true,
           name: true,
+          displayName: true,
           timeBiasCoefficient: true,
           deletedAt: true,
         },

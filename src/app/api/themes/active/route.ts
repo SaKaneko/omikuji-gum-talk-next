@@ -25,7 +25,7 @@ export async function GET() {
       expectedDuration: true,
       author: {
         select: {
-          name: true,
+          displayName: true,
           deletedAt: true,
         },
       },

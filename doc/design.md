@@ -37,7 +37,9 @@ erDiagram
 
     User {
         string id PK "UUID"
-        string name "Display Name"
+        string name "Login ID"
+        string displayName "Display Name"
+        string email "Email (nullable)"
         string role_id FK "Ref: Roles"
         float timeBiasCoefficient "Default: 0.0"
         string passwordHash
@@ -75,15 +77,17 @@ erDiagram
 
 #### 2.2.1 Users テーブル
 
-| カラム名              | 型        | 制約         | 説明                  |
-| :-------------------- | :-------- | :----------- | :-------------------- |
-| id                    | UUID      | PK           | ユーザーID            |
-| name                  | VARCHAR   | NOT NULL     | 表示名                |
-| role_id               | UUID      | FK, NOT NULL | ロールID (Roles.id)   |
-| time_bias_coefficient | DOUBLE    | DEFAULT 0.0  | 予想時間のズレ係数    |
-| password_hash         | VARCHAR   | NOT NULL     | パスワードハッシュ    |
-| salt                  | VARCHAR   | NOT NULL     | パスワードソルト      |
-| deleted_at            | TIMESTAMP | NULL         | 削除日時 (論理削除用) |
+| カラム名              | 型        | 制約             | 説明                  |
+| :-------------------- | :-------- | :--------------- | :-------------------- |
+| id                    | UUID      | PK               | ユーザーID            |
+| name                  | VARCHAR   | NOT NULL, UNIQUE | ログインID (認証用)   |
+| display_name          | VARCHAR   | NOT NULL         | 表示名                |
+| email                 | VARCHAR   | NULL             | メールアドレス        |
+| role_id               | UUID      | FK, NOT NULL     | ロールID (Roles.id)   |
+| time_bias_coefficient | DOUBLE    | DEFAULT 0.0      | 予想時間のズレ係数    |
+| password_hash         | VARCHAR   | NOT NULL         | パスワードハッシュ    |
+| salt                  | VARCHAR   | NOT NULL         | パスワードソルト      |
+| deleted_at            | TIMESTAMP | NULL             | 削除日時 (論理削除用) |
 
 #### 2.2.2 Roles テーブル
 
@@ -158,7 +162,14 @@ Next.js App Router の機能を活用し、クライアントからの操作は 
   - 入力: 現在のパスワード、新しいパスワード、新しいパスワード（確認）
   - 処理: 入力チェック → パスワード長さチェック → 確認入力一致チェック → 新旧パスワード一致チェック → 現在のパスワード検証 → パスワードハッシュ・ソルト再生成 → DB更新
   - 戻り値: `{ success: boolean, error?: string }`
-  - 将来的に設定項目が増えた場合、このグループにアクションを追加する（例: `updateDisplayName`, `updateProfile` 等）
+  - 将来的に設定項目が増えた場合、このグループにアクションを追加する（例: `updateProfile` 等）
+
+#### Settings Actions – Profile
+
+- `updateProfile(formData)`: プロフィール更新（表示名・メールアドレス）
+  - 入力: 表示名、メールアドレス（任意）
+  - 処理: 入力チェック → 表示名必須チェック → メールアドレス形式チェック（入力時）→ DB更新
+  - 戻り値: `{ success: boolean, error?: string }`
 
 ### 3.2 Route Handlers (API Endpoints)
 
@@ -223,7 +234,7 @@ src/ (またはルート直下)
 - **左側**: アプリ名（トップページへのリンク）
 - **中央**: メインナビゲーション（ホーム、お題一覧、投稿、くじ引き、管理）
 - **右側**: ユーザーエリア
-  - **ユーザー名**: クリックすると `/settings`（設定画面）へ遷移するリンクとする。ホバー時に視覚的フィードバック（下線やカーソル変更など）を表示し、クリック可能であることを示す。
+  - **表示名**: クリックすると `/settings`（設定画面）へ遷移するリンクとする。ホバー時に視覚的フィードバック（下線やカーソル変更など）を表示し、クリック可能であることを示す。
   - **ログアウトボタン**
 
 ## 5. ロジック詳細 (Business Logic)

@@ -12,7 +12,9 @@ datasource db {
 
 model User {
   id                   String    @id @default(uuid())
-  name                 String
+  name                 String    @unique
+  displayName          String    @map("display_name")
+  email                String?
   roleId               String    @map("role_id")
   timeBiasCoefficient  Float     @default(0.0) @map("time_bias_coefficient")
   passwordHash         String    @map("password_hash")

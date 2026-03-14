@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import {
   hashPassword,
@@ -80,5 +81,45 @@ export async function changePassword(
     },
   });
 
+  return { success: true };
+}
+
+export async function updateProfile(
+  _prevState: ActionResult | null,
+  formData: FormData
+): Promise<ActionResult> {
+  const displayNameValue = formData.get("displayName");
+  const emailValue = formData.get("email");
+
+  if (typeof displayNameValue !== "string") {
+    return { success: false, error: "不正なリクエストです。" };
+  }
+
+  const displayName = displayNameValue.trim();
+  const email = typeof emailValue === "string" ? emailValue.trim() : "";
+
+  if (!displayName) {
+    return { success: false, error: "表示名を入力してください。" };
+  }
+
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return { success: false, error: "メールアドレスの形式が正しくありません。" };
+  }
+
+  const sessionUser = await getCurrentUser();
+  if (!sessionUser) {
+    return { success: false, error: "認証エラー: ログインし直してください。" };
+  }
+
+  await prisma.user.update({
+    where: { id: sessionUser.id },
+    data: {
+      displayName,
+      email: email || null,
+    },
+  });
+
+  revalidatePath("/settings");
+  revalidatePath("/");
   return { success: true };
 }

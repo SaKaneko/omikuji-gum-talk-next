@@ -32,6 +32,7 @@ export interface ThemeWithAuthor {
   author: {
     id: string;
     name: string;
+    displayName: string;
     timeBiasCoefficient: number;
     deletedAt: Date | null;
   };
@@ -44,7 +45,7 @@ export interface ActiveTheme {
   type: ThemeType;
   expectedDuration: number;
   author: {
-    name: string;
+    displayName: string;
     deletedAt: Date | null;
   };
 }

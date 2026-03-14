@@ -68,5 +68,11 @@ export async function getUsers() {
     orderBy: { name: "asc" },
   });
 
-  return users;
+  return users.map((u) => ({
+    id: u.id,
+    name: u.name,
+    displayName: u.displayName,
+    role: u.role,
+    timeBiasCoefficient: u.timeBiasCoefficient,
+  }));
 }
