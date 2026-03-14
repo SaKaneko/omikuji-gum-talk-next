@@ -176,6 +176,12 @@ Next.js App Router の機能を活用し、クライアントからの操作は 
 必要に応じて以下のエンドポイントを実装する。基本的には Server Actions で完結させる方針とする。
 
 - `GET /api/me`: 現在のログインユーザー情報取得 (Client Component初期化用など)
+- `GET /api/users`: ユーザー一覧取得（認証不要）
+  - レスポンス: `Array<{ displayName, email }>`
+  - 有効なユーザー（`deletedAt` が `null`）のみ返却する。
+- `GET /api/users/admin`: 管理ユーザー一覧取得（認証不要）
+  - レスポンス: `Array<{ displayName, email }>`
+  - admin ロールを持つ有効なユーザーのみ返却する。
 - `GET /api/themes/remaining`: 未消化のお題統計情報取得（認証不要）
   - レスポンス: `{ count: number, totalExpectedDuration: number, totalCorrectedDuration: number }`
 - `GET /api/themes/active`: 現在発表中(`status='IN_PROGRESS'`)のお題を取得
