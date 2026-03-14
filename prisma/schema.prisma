@@ -21,11 +21,28 @@ model User {
   salt                 String
   deletedAt            DateTime? @map("deleted_at")
 
-  role   Role    @relation(fields: [roleId], references: [id])
-  themes Theme[]
+  role    Role     @relation(fields: [roleId], references: [id])
+  themes  Theme[]
+  apiKeys ApiKey[]
 
   @@unique([name, deletedAt])
   @@map("users")
+}
+
+model ApiKey {
+  id         String    @id @default(uuid())
+  name       String
+  keyHash    String    @unique @map("key_hash")
+  prefix     String
+  userId     String    @map("user_id")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  lastUsedAt DateTime? @map("last_used_at")
+  revokedAt  DateTime? @map("revoked_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@map("api_keys")
 }
 
 model Role {

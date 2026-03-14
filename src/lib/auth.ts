@@ -1,7 +1,8 @@
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
+import { headers } from "next/headers";
 import { prisma } from "./prisma";
-import { scryptSync, randomBytes, timingSafeEqual } from "crypto";
+import { scryptSync, randomBytes, timingSafeEqual, createHash } from "crypto";
 
 const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || "fallback-secret-do-not-use-in-production"
@@ -129,4 +130,87 @@ export function hasPermission(
 ): boolean {
   if (!user) return false;
   return user.permissions.includes(permission);
+}
+
+// --- API Key functions ---
+
+const API_KEY_PREFIX = "ogt_";
+
+export function generateApiKey(): string {
+  return API_KEY_PREFIX + randomBytes(32).toString("hex");
+}
+
+export function hashApiKey(key: string): string {
+  return createHash("sha256").update(key).digest("hex");
+}
+
+export function getApiKeyPrefix(key: string): string {
+  return key.substring(0, API_KEY_PREFIX.length + 8);
+}
+
+export async function getUserFromApiKey(
+  apiKey: string
+): Promise<SessionUser | null> {
+  const keyHash = hashApiKey(apiKey);
+
+  const record = await prisma.apiKey.findUnique({
+    where: {
+      keyHash,
+    },
+    include: {
+      user: {
+        include: {
+          role: {
+            include: {
+              rolePermissions: {
+                include: {
+                  permission: true,
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if (!record || record.revokedAt || record.user.deletedAt) return null;
+
+  // Update lastUsedAt (non-blocking)
+  prisma.apiKey
+    .update({
+      where: { id: record.id },
+      data: { lastUsedAt: new Date() },
+    })
+    .catch(() => {});
+
+  const permissions = record.user.role.rolePermissions.map(
+    (rp) => rp.permission.slug
+  );
+
+  return {
+    id: record.user.id,
+    name: record.user.name,
+    displayName: record.user.displayName,
+    roleName: record.user.role.name,
+    permissions,
+  };
+}
+
+export async function getRequestUser(): Promise<SessionUser | null> {
+  // First try API key from headers
+  const headerStore = await headers();
+  const authHeader = headerStore.get("authorization");
+  const xApiKey = headerStore.get("x-api-key");
+
+  const apiKey =
+    (authHeader?.startsWith("Bearer ogt_") ? authHeader.slice(7) : null) ??
+    (xApiKey?.startsWith("ogt_") ? xApiKey : null);
+
+  if (apiKey) {
+    return getUserFromApiKey(apiKey);
+  }
+
+  // Fall back to cookie/JWT auth
+  return getCurrentUser();
 }
