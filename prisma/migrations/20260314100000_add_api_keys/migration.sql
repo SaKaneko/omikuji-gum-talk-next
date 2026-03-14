@@ -14,3 +14,9 @@ CREATE TABLE "api_keys" (
 
 -- AddForeignKey
 ALTER TABLE "api_keys" ADD CONSTRAINT "api_keys_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- Ensure fast lookup and uniqueness by key_hash
+CREATE UNIQUE INDEX "api_keys_key_hash_key" ON "api_keys"("key_hash");
+
+-- Add index for efficient listing by user_id
+CREATE INDEX "api_keys_user_id_idx" ON "api_keys"("user_id");
