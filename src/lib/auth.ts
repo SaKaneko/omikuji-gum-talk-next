@@ -153,10 +153,9 @@ export async function getUserFromApiKey(
 ): Promise<SessionUser | null> {
   const keyHash = hashApiKey(apiKey);
 
-  const record = await prisma.apiKey.findFirst({
+  const record = await prisma.apiKey.findUnique({
     where: {
       keyHash,
-      revokedAt: null,
     },
     include: {
       user: {
@@ -175,7 +174,7 @@ export async function getUserFromApiKey(
     },
   });
 
-  if (!record || record.user.deletedAt) return null;
+  if (!record || record.revokedAt || record.user.deletedAt) return null;
 
   // Update lastUsedAt (non-blocking)
   prisma.apiKey
