@@ -64,6 +64,54 @@ export async function postTheme(data: ThemeFormData): Promise<ActionResult> {
   return { success: true };
 }
 
+export async function updateTheme(
+  id: string,
+  data: ThemeFormData
+): Promise<ActionResult> {
+  const user = await getCurrentUser();
+  if (!user) {
+    return { success: false, error: "ログインが必要です。" };
+  }
+
+  const theme = await prisma.theme.findUnique({ where: { id } });
+  if (!theme) {
+    return { success: false, error: "お題が見つかりません。" };
+  }
+
+  if (theme.authorId !== user.id) {
+    return { success: false, error: "自分の投稿のみ編集できます。" };
+  }
+
+  if (theme.status !== "PENDING") {
+    return { success: false, error: "未消化のお題のみ編集できます。" };
+  }
+
+  if (!data.subject || !data.content) {
+    return { success: false, error: "件名と本文を入力してください。" };
+  }
+
+  if (data.expectedDuration <= 0) {
+    return { success: false, error: "予想所要時間は正の数を入力してください。" };
+  }
+
+  if (data.type === "LIGHTNING_TALK" && data.expectedDuration > 10) {
+    return { success: false, error: "LT（Lightning Talk）は最大10分までです。" };
+  }
+
+  await prisma.theme.update({
+    where: { id },
+    data: {
+      subject: data.subject,
+      content: data.content,
+      type: data.type,
+      expectedDuration: data.expectedDuration,
+    },
+  });
+
+  revalidatePath("/themes");
+  return { success: true };
+}
+
 export async function deleteTheme(id: string): Promise<ActionResult> {
   const user = await getCurrentUser();
   if (!user) {
