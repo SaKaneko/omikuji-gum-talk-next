@@ -36,7 +36,7 @@ export interface ThemeWithAuthor {
     timeBiasCoefficient: number;
     deletedAt: Date | null;
   };
-  _count: {
+  _count?: {
     comments: number;
   };
 }
