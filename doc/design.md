@@ -38,6 +38,12 @@ erDiagram
     Theme ||--o{ Comment : "has"
     User ||--o{ Comment : "writes"
 
+    SystemSettings {
+        string key PK "設定キー"
+        string value "設定値"
+        timestamp updatedAt "最終更新日時"
+    }
+
     User {
         string id PK "UUID"
         string name "Login ID"
@@ -171,6 +177,20 @@ erDiagram
 - `theme_id` の外部キー制約は `ON DELETE CASCADE` とし、お題削除時に関連コメントも一括削除する。
 - `author_id` の外部キー制約は `ON DELETE SET NULL`とし、ユーザー削除時にコメントは残す（投稿者は「削除されたユーザー」表示に切り替わる）。
 
+#### 2.2.8 SystemSettings テーブル
+
+| カラム名   | 型        | 制約          | 説明                       |
+| :--------- | :-------- | :------------ | :------------------------- |
+| key        | VARCHAR   | PK            | 設定キー                   |
+| value      | TEXT      | NOT NULL      | 設定値（文字列として保存） |
+| updated_at | TIMESTAMP | DEFAULT NOW() | 最終更新日時               |
+
+定義済み設定キー:
+
+| キー              | 初期値 | 説明                                         |
+| :---------------- | :----- | :------------------------------------------- |
+| `themes_per_page` | `"20"` | お題一覧の1ページあたりの表示件数 (正の整数) |
+
 ## 3. API設計 / Server Actions
 
 Next.js App Router の機能を活用し、クライアントからの操作は Server Actions を主体に実装する。
@@ -242,6 +262,18 @@ Next.js App Router の機能を活用し、クライアントからの操作は 
 - `deleteComment(commentId)`: コメントを削除
   - 認証: ログイン済みユーザーのみ
   - 処理: 認証チェック → コメント取得 → 自分のコメントまたは `delete_others_posts` 権限を持つユーザーであることを確認 → DB削除
+  - 戻り値: `{ success: boolean, error?: string }`
+
+#### System Settings Actions (Admin)
+
+- `getSystemSettings()`: システム設定の一覧（全キー・値）を取得
+  - 認証: admin権限必要
+  - 処理: 認証チェック → DB取得。レコードが存在しないキーは初期値を返す
+  - 戻り値: `{ success: boolean, settings?: Record<string, string>, error?: string }`
+- `updateSystemSetting(key, value)`: 指定キーの設定値を更新
+  - 入力: 設定キー（例: `themes_per_page`）、新しい値
+  - 認証: admin権限必要
+  - 処理: 認証チェック → キーの存在確認・バリデーション → `upsert` によりDB保存 → `updated_at` を更新
   - 戻り値: `{ success: boolean, error?: string }`
 
 ### 3.2 Route Handlers (API Endpoints)
@@ -372,6 +404,7 @@ src/ (またはルート直下)
 | コメント閲覧     |   ○   |    ○    | 発表中・消化済みのお題に対してのみ |
 | コメント削除(自) |   ○   |    ○    | 自分のコメントのみ                 |
 | コメント削除(他) |   ○   |    ☓    | `delete_others_posts` 権限が必要   |
+| アプリ設定変更   |   ○   |    ☓    | adminのみ変更可                    |
 
 ## 7. 型定義補足 (Type Supplements)
 

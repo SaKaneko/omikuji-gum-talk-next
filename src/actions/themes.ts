@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser, hasPermission } from "@/lib/auth";
-import { ActionResult, ThemeFormData, DrawFilters, ThemeWithAuthor } from "@/types";
+import { ActionResult, ThemeFormData, DrawFilters, ThemeWithAuthor, PaginatedThemes } from "@/types";
 import { Prisma, ThemeStatus } from "@prisma/client";
 
 /** 発表中タイムアウトチェック: presentedAt から60分超過した IN_PROGRESS のお題を COMPLETED に自動更新 */
@@ -420,6 +420,57 @@ export async function getThemes(): Promise<ThemeWithAuthor[]> {
   });
 
   return themes as ThemeWithAuthor[];
+}
+
+export async function getThemesPaginated(
+  page: number,
+  perPage: number,
+  statusFilter?: string
+): Promise<PaginatedThemes> {
+  const where: Prisma.ThemeWhereInput = {};
+  if (statusFilter && statusFilter !== "all") {
+    const statusMap: Record<string, ThemeStatus> = {
+      pending: "PENDING",
+      in_progress: "IN_PROGRESS",
+      completed: "COMPLETED",
+    };
+    const status = statusMap[statusFilter];
+    if (status) {
+      where.status = status;
+    }
+  }
+
+  const [themes, totalCount] = await Promise.all([
+    prisma.theme.findMany({
+      where,
+      include: {
+        author: {
+          select: {
+            id: true,
+            name: true,
+            displayName: true,
+            timeBiasCoefficient: true,
+            deletedAt: true,
+          },
+        },
+        _count: {
+          select: { comments: true },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+      skip: (page - 1) * perPage,
+      take: perPage,
+    }),
+    prisma.theme.count({ where }),
+  ]);
+
+  return {
+    themes: themes as ThemeWithAuthor[],
+    totalCount,
+    page,
+    perPage,
+    totalPages: Math.max(1, Math.ceil(totalCount / perPage)),
+  };
 }
 
 export async function startPresentation(id: string): Promise<ActionResult> {

@@ -120,3 +120,11 @@ model Comment {
   @@index([themeId])
   @@map("comments")
 }
+
+model SystemSetting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@map("system_settings")
+}

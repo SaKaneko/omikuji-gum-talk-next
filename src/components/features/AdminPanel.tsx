@@ -6,6 +6,7 @@ import { ThemeStatus } from "@prisma/client";
 import { updateUserRole, deleteUser } from "@/actions/users";
 import { deleteTheme, updateThemeStatus } from "@/actions/themes";
 import { createApiKey, revokeApiKey, deleteApiKey, ApiKeyInfo } from "@/actions/apiKeys";
+import { updateSystemSetting } from "@/actions/settings";
 import { getThemeDisplay } from "@/lib/themeDisplay";
 
 interface User {
@@ -20,16 +21,20 @@ interface AdminPanelProps {
   users: User[];
   themes: ThemeWithAuthor[];
   apiKeys: ApiKeyInfo[];
+  systemSettings: Record<string, string>;
 }
 
-type Tab = "users" | "themes" | "apikeys";
+type Tab = "users" | "themes" | "apikeys" | "appsettings";
 
-export function AdminPanel({ users, themes, apiKeys }: AdminPanelProps) {
+const THEMES_PER_PAGE_OPTIONS = ["10", "20", "50", "100"];
+
+export function AdminPanel({ users, themes, apiKeys, systemSettings }: AdminPanelProps) {
   const [activeTab, setActiveTab] = useState<Tab>("users");
   const [isPending, startTransition] = useTransition();
   const [newKeyName, setNewKeyName] = useState("");
   const [generatedKey, setGeneratedKey] = useState<string | null>(null);
   const [apiKeyError, setApiKeyError] = useState<string | null>(null);
+  const [settingsMessage, setSettingsMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   const handleRoleChange = (userId: string, newRole: string) => {
     startTransition(async () => {
@@ -88,6 +93,18 @@ export function AdminPanel({ users, themes, apiKeys }: AdminPanelProps) {
     });
   };
 
+  const handleUpdateSetting = (key: string, value: string) => {
+    setSettingsMessage(null);
+    startTransition(async () => {
+      const result = await updateSystemSetting(key, value);
+      if (result.success) {
+        setSettingsMessage({ type: "success", text: "設定を更新しました。" });
+      } else {
+        setSettingsMessage({ type: "error", text: result.error ?? "エラーが発生しました。" });
+      }
+    });
+  };
+
   return (
     <div>
       <h1 className="text-2xl font-bold text-gray-800 mb-6">⚙️ 管理画面</h1>
@@ -123,6 +140,16 @@ export function AdminPanel({ users, themes, apiKeys }: AdminPanelProps) {
           }`}
         >
           🔑 APIキー ({apiKeys.filter((k) => !k.revokedAt).length})
+        </button>
+        <button
+          onClick={() => setActiveTab("appsettings")}
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            activeTab === "appsettings"
+              ? "bg-primary-600 text-white"
+              : "bg-white text-gray-600 hover:bg-gray-100"
+          }`}
+        >
+          🛠️ アプリ設定
         </button>
       </div>
 
@@ -374,6 +401,50 @@ export function AdminPanel({ users, themes, apiKeys }: AdminPanelProps) {
                 </div>
               </div>
             ))
+          )}
+        </div>
+      )}
+
+      {/* App Settings */}
+      {activeTab === "appsettings" && (
+        <div className="space-y-4">
+          <div className="card">
+            <h3 className="text-sm font-semibold text-gray-700 mb-3">📋 一覧表示件数</h3>
+            <p className="text-xs text-gray-500 mb-3">
+              お題一覧画面の1ページあたりの表示件数を設定します。
+            </p>
+            <div className="flex items-center gap-3">
+              <select
+                value={systemSettings.themes_per_page ?? "20"}
+                onChange={(e) => handleUpdateSetting("themes_per_page", e.target.value)}
+                disabled={isPending}
+                className="input-field w-auto py-1.5"
+              >
+                {THEMES_PER_PAGE_OPTIONS.map((opt) => (
+                  <option key={opt} value={opt}>
+                    {opt}件
+                  </option>
+                ))}
+              </select>
+              <span className="text-xs text-gray-400">/ ページ</span>
+            </div>
+          </div>
+          {settingsMessage && (
+            <div
+              className={`card ${
+                settingsMessage.type === "success"
+                  ? "bg-green-50 border border-green-200"
+                  : "bg-red-50 border border-red-200"
+              }`}
+            >
+              <p
+                className={`text-sm ${
+                  settingsMessage.type === "success" ? "text-green-800" : "text-red-800"
+                }`}
+              >
+                {settingsMessage.text}
+              </p>
+            </div>
           )}
         </div>
       )}
