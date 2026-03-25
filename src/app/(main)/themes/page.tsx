@@ -16,8 +16,21 @@ export default async function ThemesPage({
 
   const perPage = await getThemesPerPage();
   const page = Math.max(1, parseInt(params.page || "1", 10) || 1);
-  const filter = params.filter || "pending";
+  const rawFilter = params.filter;
+  const ALLOWED_FILTERS = ["all", "pending", "in_progress", "completed"] as const;
+  type ThemeFilter = (typeof ALLOWED_FILTERS)[number];
+  let filter: ThemeFilter;
 
+  if (rawFilter === undefined) {
+    // No filter specified in query: keep existing default behavior.
+    filter = "pending";
+  } else if (ALLOWED_FILTERS.includes(rawFilter as ThemeFilter)) {
+    // Valid filter from query.
+    filter = rawFilter as ThemeFilter;
+  } else {
+    // Invalid filter from query: normalize to "all" to match backend behavior.
+    filter = "all";
+  }
   const paginatedThemes = await getThemesPaginated(page, perPage, filter);
 
   return (
