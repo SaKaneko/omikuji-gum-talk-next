@@ -36,6 +36,9 @@ export interface ThemeWithAuthor {
     timeBiasCoefficient: number;
     deletedAt: Date | null;
   };
+  _count: {
+    comments: number;
+  };
 }
 
 export interface ActiveTheme {
@@ -48,4 +51,15 @@ export interface ActiveTheme {
     displayName: string;
     deletedAt: Date | null;
   };
+}
+
+export interface CommentWithAuthor {
+  id: string;
+  content: string;
+  themeId: string;
+  authorId: string | null;
+  author: {
+    displayName: string;
+  } | null;
+  createdAt: Date;
 }
