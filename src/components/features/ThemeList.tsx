@@ -35,7 +35,10 @@ export function ThemeList({
   const [filter, setFilter] = useState<FilterStatus>("pending");
   const [isPending, startTransition] = useTransition();
   const [editingTheme, setEditingTheme] = useState<ThemeWithAuthor | null>(null);
-  const [commentingTheme, setCommentingTheme] = useState<ThemeWithAuthor | null>(null);
+  const [commentingThemeId, setCommentingThemeId] = useState<string | null>(null);
+  const commentingTheme = commentingThemeId
+    ? themes.find((t) => t.id === commentingThemeId) ?? null
+    : null;
 
   const filteredThemes = themes.filter((theme) => {
     if (filter === "completed") return theme.status === "COMPLETED";
@@ -158,7 +161,7 @@ export function ThemeList({
                   <div className="flex flex-col gap-2 shrink-0">
                     {theme.status !== "PENDING" && (
                       <button
-                        onClick={() => setCommentingTheme(theme)}
+                        onClick={() => setCommentingThemeId(theme.id)}
                         className="text-xs px-3 py-1 rounded-md bg-gray-50 text-gray-600 hover:bg-gray-100 transition-colors relative"
                       >
                         💬 コメント
@@ -222,7 +225,7 @@ export function ThemeList({
           currentUserId={currentUserId}
           canDeleteOthers={canDeleteOthers}
           commentCount={commentingTheme._count.comments}
-          onClose={() => setCommentingTheme(null)}
+          onClose={() => setCommentingThemeId(null)}
         />
       )}
     </div>
