@@ -97,7 +97,7 @@ export function CommentModal({
         <div className="p-6 border-b border-gray-100">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-bold text-gray-800">
-              💬 コメント ({commentCount})
+              💬 コメント ({loaded ? comments.length : commentCount})
             </h2>
             <button
               onClick={onClose}
