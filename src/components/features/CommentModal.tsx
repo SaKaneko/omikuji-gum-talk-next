@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { CommentWithAuthor } from "@/types";
 import { getComments, addComment, deleteComment } from "@/actions/comments";
 import { MarkdownRenderer } from "@/components/features/MarkdownRenderer";
@@ -41,10 +41,22 @@ export function CommentModal({
     setLoaded(true);
   };
 
-  // Load on mount
-  if (!loaded && !loading) {
-    loadComments();
-  }
+  useEffect(() => {
+    let ignore = false;
+    (async () => {
+      setLoading(true);
+      const result = await getComments(themeId);
+      if (ignore) return;
+      if (result.success && result.comments) {
+        setComments(result.comments);
+      } else {
+        setError(result.error || "コメントの取得に失敗しました。");
+      }
+      setLoading(false);
+      setLoaded(true);
+    })();
+    return () => { ignore = true; };
+  }, [themeId]);
 
   const handleSubmit = () => {
     if (!newComment.trim()) return;
