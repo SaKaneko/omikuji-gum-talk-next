@@ -21,9 +21,10 @@ model User {
   salt                 String
   deletedAt            DateTime? @map("deleted_at")
 
-  role    Role     @relation(fields: [roleId], references: [id])
-  themes  Theme[]
-  apiKeys ApiKey[]
+  role     Role      @relation(fields: [roleId], references: [id])
+  themes   Theme[]
+  apiKeys  ApiKey[]
+  comments Comment[]
 
   @@unique([name, deletedAt])
   @@map("users")
@@ -100,7 +101,22 @@ model Theme {
   presentedAt      DateTime?   @map("presented_at")
   createdAt        DateTime    @default(now()) @map("created_at")
 
-  author User @relation(fields: [authorId], references: [id])
+  author   User      @relation(fields: [authorId], references: [id])
+  comments Comment[]
 
   @@map("themes")
+}
+
+model Comment {
+  id        String   @id @default(uuid())
+  content   String
+  themeId   String   @map("theme_id")
+  authorId  String?  @map("author_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  theme  Theme @relation(fields: [themeId], references: [id], onDelete: Cascade)
+  author User? @relation(fields: [authorId], references: [id], onDelete: SetNull)
+
+  @@index([themeId])
+  @@map("comments")
 }

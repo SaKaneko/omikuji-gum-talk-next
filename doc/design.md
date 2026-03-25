@@ -35,6 +35,8 @@ erDiagram
     Permission ||--o{ RolePermission : "is assigned to"
     User ||--o{ Theme : "posts"
     User ||--o{ ApiKey : "owns"
+    Theme ||--o{ Comment : "has"
+    User ||--o{ Comment : "writes"
 
     User {
         string id PK "UUID"
@@ -81,6 +83,12 @@ erDiagram
         timestamp createdAt
         timestamp lastUsedAt "nullable"
         timestamp revokedAt "nullable"
+    }    Comment {
+        string id PK "UUID"
+        string content "Markdown本文"
+        string themeId FK "Themes.id"
+        string authorId FK "Users.id"
+        timestamp createdAt
     }
 ```
 
@@ -150,6 +158,19 @@ erDiagram
 | last_used_at | TIMESTAMP | NULL          | 最終使用日時                             |
 | revoked_at   | TIMESTAMP | NULL          | 無効化日時（設定済みの場合はキーが無効） |
 
+#### 2.2.7 Comments テーブル
+
+| カラム名   | 型        | 制約          | 説明                         |
+| :--------- | :-------- | :------------ | :--------------------------- |
+| id         | UUID      | PK            | コメントID                   |
+| content    | TEXT      | NOT NULL      | コメント本文（Markdown形式） |
+| theme_id   | UUID      | FK, NOT NULL  | 対象お題ID (Themes.id)       |
+| author_id  | UUID      | FK, NOT NULL  | 投稿者ID (Users.id)          |
+| created_at | TIMESTAMP | DEFAULT NOW() | 作成日時                     |
+
+- `theme_id` の外部キー制約は `ON DELETE CASCADE` とし、お題削除時に関連コメントも一括削除する。
+- `author_id` の外部キー制約は `ON DELETE SET NULL`とし、ユーザー削除時にコメントは残す（投稿者は「削除されたユーザー」表示に切り替わる）。
+
 ## 3. API設計 / Server Actions
 
 Next.js App Router の機能を活用し、クライアントからの操作は Server Actions を主体に実装する。
@@ -207,6 +228,22 @@ Next.js App Router の機能を活用し、クライアントからの操作は 
 - `revokeApiKey(keyId)`: APIキーを無効化（`revokedAt` を設定）
 - `deleteApiKey(keyId)`: APIキーレコードを完全に削除
 
+#### Comment Actions
+
+- `getComments(themeId)`: 指定お題のコメント一覧を取得（作成日時昇順）
+  - 認証: ログイン済みユーザーのみ
+  - 処理: 対象お題のステータスが `IN_PROGRESS` または `COMPLETED` であることを確認
+  - 戻り値: `{ success: boolean, comments?: CommentWithAuthor[], error?: string }`
+- `addComment(themeId, content)`: コメントを追加
+  - 入力: お題ID、コメント本文（Markdown）
+  - 認証: ログイン済みユーザーのみ
+  - 処理: 認証チェック → 対象お題取得 → ステータスが `IN_PROGRESS` または `COMPLETED` であることを確認 → コメント本文の空文字チェック → DB保存
+  - 戻り値: `{ success: boolean, error?: string }`
+- `deleteComment(commentId)`: コメントを削除
+  - 認証: ログイン済みユーザーのみ
+  - 処理: 認証チェック → コメント取得 → 自分のコメントまたは `delete_others_posts` 権限を持つユーザーであることを確認 → DB削除
+  - 戻り値: `{ success: boolean, error?: string }`
+
 ### 3.2 Route Handlers (API Endpoints)
 
 必要に応じて以下のエンドポイントを実装する。基本的には Server Actions で完結させる方針とする。
@@ -245,27 +282,29 @@ Next.js App Router の機能を活用し、クライアントからの操作は 
 ### 4.1 ディレクトリ構成案 (App Router)
 
 ```
+
 src/ (またはルート直下)
-  ├── app/             # App Router ページ/レイアウト
-  │   ├── (auth)/      # Route Group: 認証関連 (login, register)
-  │   ├── (main)/      # Route Group: メイン画面 (layout共有)
-  │   │   ├── page.tsx          # トップ画面 (メニュー)
-  │   │   ├── themes/page.tsx   # お題一覧
-  │   │   ├── post/page.tsx     # 投稿画面
-  │   │   ├── draw/page.tsx     # くじ引き画面
-  │   │   ├── admin/            # 管理画面
-  │   │   │   └── page.tsx      # 管理ページ
-  │   │   └── settings/         # 設定画面
-  │   │       └── page.tsx      # 設定ページ (タブ構成)
-  │   ├── api/         # Route Handlers
-  │   ├── globals.css  # グローバルスタイル
-  │   └── layout.tsx   # ルートレイアウト
-  ├── components/      # UIパーツ
-  │   ├── ui/          # 汎用UI (Button, Input etc - shadcn/ui想定)
-  │   └── features/    # 機能単位 (ThemeCard, DrawDisplay, SettingsPanel etc)
-  ├── lib/             # ユーティリティ (prisma client, auth config)
-  ├── actions/         # Server Actions (auth.ts, themes.ts, settings.ts, apiKeys.ts)
-  └── types/           # 型定義
+├── app/ # App Router ページ/レイアウト
+│ ├── (auth)/ # Route Group: 認証関連 (login, register)
+│ ├── (main)/ # Route Group: メイン画面 (layout共有)
+│ │ ├── page.tsx # トップ画面 (メニュー)
+│ │ ├── themes/page.tsx # お題一覧
+│ │ ├── post/page.tsx # 投稿画面
+│ │ ├── draw/page.tsx # くじ引き画面
+│ │ ├── admin/ # 管理画面
+│ │ │ └── page.tsx # 管理ページ
+│ │ └── settings/ # 設定画面
+│ │ └── page.tsx # 設定ページ (タブ構成)
+│ ├── api/ # Route Handlers
+│ ├── globals.css # グローバルスタイル
+│ └── layout.tsx # ルートレイアウト
+├── components/ # UIパーツ
+│ ├── ui/ # 汎用UI (Button, Input etc - shadcn/ui想定)
+│ └── features/ # 機能単位 (ThemeCard, DrawDisplay, SettingsPanel etc)
+├── lib/ # ユーティリティ (prisma client, auth config)
+├── actions/ # Server Actions (auth.ts, themes.ts, settings.ts, apiKeys.ts)
+└── types/ # 型定義
+
 ```
 
 ### 4.2 状態管理
@@ -319,13 +358,36 @@ src/ (またはルート直下)
 
 ### 6.1 権限マトリクス
 
-| 機能           | Admin | General | 備考                   |
-| :------------- | :---: | :-----: | :--------------------- |
-| 投稿           |   ○   |    ○    |                        |
-| 編集(自)       |   ○   |    ○    | 未消化の自分の投稿のみ |
-| 閲覧(自)       |   ○   |    ○    |                        |
-| 閲覧(他・詳細) |   ○   |    ☓    | 他人は件名のみ         |
-| くじ引き       |   ○   |    ☓    | 権限設定による         |
-| 削除(他)       |   ○   |    ☓    |                        |
-| 設定変更(自)   |   ○   |    ○    | 自身の設定のみ         |
-| APIキー管理    |   ○   |    ☓    | adminのみ発行可        |
+| 機能             | Admin | General | 備考                               |
+| :--------------- | :---: | :-----: | :--------------------------------- |
+| 投稿             |   ○   |    ○    |                                    |
+| 編集(自)         |   ○   |    ○    | 未消化の自分の投稿のみ             |
+| 閲覧(自)         |   ○   |    ○    |                                    |
+| 閲覧(他・詳細)   |   ○   |    ☓    | 他人は件名のみ                     |
+| くじ引き         |   ○   |    ☓    | 権限設定による                     |
+| 削除(他)         |   ○   |    ☓    |                                    |
+| 設定変更(自)     |   ○   |    ○    | 自身の設定のみ                     |
+| APIキー管理      |   ○   |    ☓    | adminのみ発行可                    |
+| コメント追加     |   ○   |    ○    | 発表中・消化済みのお題に対してのみ |
+| コメント閲覧     |   ○   |    ○    | 発表中・消化済みのお題に対してのみ |
+| コメント削除(自) |   ○   |    ○    | 自分のコメントのみ                 |
+| コメント削除(他) |   ○   |    ☓    | `delete_others_posts` 権限が必要   |
+
+## 7. 型定義補足 (Type Supplements)
+
+### CommentWithAuthor
+
+Server Actions および画面表示で使用する、投稿者情報を結合したコメント型。
+
+```typescript
+type CommentWithAuthor = {
+  id: string;
+  content: string; // Markdown本文
+  themeId: string;
+  authorId: string | null;
+  author: {
+    displayName: string;
+  } | null; // ユーザー削除済みの場合はnull
+  createdAt: Date;
+};
+```

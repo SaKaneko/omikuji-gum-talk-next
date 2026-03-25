@@ -200,7 +200,7 @@ export function AdminPanel({ users, themes, apiKeys }: AdminPanelProps) {
             themes.map((theme) => (
               <div
                 key={theme.id}
-                className={`card ${theme.status === "COMPLETED" ? "opacity-60" : ""}`}
+                className="card"
               >
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">

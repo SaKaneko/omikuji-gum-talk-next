@@ -7,6 +7,7 @@ import { deleteTheme, updateThemeStatus, updateTheme } from "@/actions/themes";
 import { getThemeDisplay } from "@/lib/themeDisplay";
 import { MarkdownRenderer } from "@/components/features/MarkdownRenderer";
 import { ThemeForm } from "@/components/features/ThemeForm";
+import { CommentModal } from "@/components/features/CommentModal";
 
 interface ThemeListProps {
   themes: ThemeWithAuthor[];
@@ -34,6 +35,10 @@ export function ThemeList({
   const [filter, setFilter] = useState<FilterStatus>("pending");
   const [isPending, startTransition] = useTransition();
   const [editingTheme, setEditingTheme] = useState<ThemeWithAuthor | null>(null);
+  const [commentingThemeId, setCommentingThemeId] = useState<string | null>(null);
+  const commentingTheme = commentingThemeId
+    ? themes.find((t) => t.id === commentingThemeId) ?? null
+    : null;
 
   const filteredThemes = themes.filter((theme) => {
     if (filter === "completed") return theme.status === "COMPLETED";
@@ -104,9 +109,7 @@ export function ThemeList({
             return (
               <div
                 key={theme.id}
-                className={`card animate-slide-up ${
-                  theme.status === "COMPLETED" ? "opacity-60" : ""
-                }`}
+                className="card animate-slide-up"
               >
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">
@@ -156,6 +159,19 @@ export function ThemeList({
                   </div>
 
                   <div className="flex flex-col gap-2 shrink-0">
+                    {theme.status !== "PENDING" && (
+                      <button
+                        onClick={() => setCommentingThemeId(theme.id)}
+                        className="text-xs px-3 py-1 rounded-md bg-gray-50 text-gray-600 hover:bg-gray-100 transition-colors relative"
+                      >
+                        💬 コメント
+                        {(theme._count?.comments ?? 0) > 0 && (
+                          <span className="ml-1 inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-primary-100 text-primary-700">
+                            {theme._count?.comments}
+                          </span>
+                        )}
+                      </button>
+                    )}
                     {isOwnPost && theme.status === "PENDING" && (
                       <button
                         onClick={() => setEditingTheme(theme)}
@@ -198,6 +214,18 @@ export function ThemeList({
         <ThemeEditModal
           theme={editingTheme}
           onClose={() => setEditingTheme(null)}
+        />
+      )}
+
+      {/* Comment Modal */}
+      {commentingTheme && (
+        <CommentModal
+          themeId={commentingTheme.id}
+          themeSubject={commentingTheme.subject}
+          currentUserId={currentUserId}
+          canDeleteOthers={canDeleteOthers}
+          commentCount={commentingTheme._count?.comments ?? 0}
+          onClose={() => setCommentingThemeId(null)}
         />
       )}
     </div>

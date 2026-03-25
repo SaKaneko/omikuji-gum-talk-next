@@ -412,6 +412,9 @@ export async function getThemes(): Promise<ThemeWithAuthor[]> {
           deletedAt: true,
         },
       },
+      _count: {
+        select: { comments: true },
+      },
     },
     orderBy: { createdAt: "desc" },
   });
