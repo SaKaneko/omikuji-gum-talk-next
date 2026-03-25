@@ -8,6 +8,7 @@ import { getThemeDisplay } from "@/lib/themeDisplay";
 import { MarkdownRenderer } from "@/components/features/MarkdownRenderer";
 import { ThemeForm } from "@/components/features/ThemeForm";
 import { CommentModal } from "@/components/features/CommentModal";
+import Link from "next/link";
 
 interface ThemeListProps {
   themes: ThemeWithAuthor[];
@@ -15,9 +16,20 @@ interface ThemeListProps {
   canViewOthers: boolean;
   canDeleteOthers: boolean;
   isAdmin: boolean;
+  currentPage: number;
+  totalPages: number;
+  totalCount: number;
+  currentFilter: string;
 }
 
 type FilterStatus = "all" | "pending" | "in_progress" | "completed";
+
+const filterLabels: { key: FilterStatus; label: string }[] = [
+  { key: "all", label: "すべて" },
+  { key: "pending", label: "未消化" },
+  { key: "in_progress", label: "発表中" },
+  { key: "completed", label: "消化済み" },
+];
 
 const statusDisplay: Record<ThemeStatus, { label: string; badge: string }> = {
   PENDING: { label: "🔥 未消化", badge: "badge-unused" },
@@ -31,21 +43,17 @@ export function ThemeList({
   canViewOthers,
   canDeleteOthers,
   isAdmin,
+  currentPage,
+  totalPages,
+  totalCount,
+  currentFilter,
 }: ThemeListProps) {
-  const [filter, setFilter] = useState<FilterStatus>("pending");
   const [isPending, startTransition] = useTransition();
   const [editingTheme, setEditingTheme] = useState<ThemeWithAuthor | null>(null);
   const [commentingThemeId, setCommentingThemeId] = useState<string | null>(null);
   const commentingTheme = commentingThemeId
     ? themes.find((t) => t.id === commentingThemeId) ?? null
     : null;
-
-  const filteredThemes = themes.filter((theme) => {
-    if (filter === "completed") return theme.status === "COMPLETED";
-    if (filter === "pending") return theme.status === "PENDING";
-    if (filter === "in_progress") return theme.status === "IN_PROGRESS";
-    return true;
-  });
 
   const handleDelete = (id: string) => {
     if (!confirm("このお題を削除しますか？")) return;
@@ -67,40 +75,47 @@ export function ThemeList({
     return corrected.toFixed(1);
   };
 
+  const buildUrl = (params: { filter?: string; page?: number }) => {
+    const searchParams = new URLSearchParams();
+    const filter = params.filter ?? currentFilter;
+    const page = params.page ?? 1;
+    if (filter && filter !== "pending") searchParams.set("filter", filter);
+    if (page > 1) searchParams.set("page", String(page));
+    const qs = searchParams.toString();
+    return `/themes${qs ? `?${qs}` : ""}`;
+  };
+
   return (
     <div>
       {/* Filter tabs */}
       <div className="flex gap-2 mb-6 flex-wrap">
-        {([
-          { key: "all" as FilterStatus, label: "すべて", count: themes.length },
-          { key: "pending" as FilterStatus, label: "未消化", count: themes.filter((t) => t.status === "PENDING").length },
-          { key: "in_progress" as FilterStatus, label: "発表中", count: themes.filter((t) => t.status === "IN_PROGRESS").length },
-          { key: "completed" as FilterStatus, label: "消化済み", count: themes.filter((t) => t.status === "COMPLETED").length },
-        ]).map((tab) => (
-          <button
+        {filterLabels.map((tab) => (
+          <Link
             key={tab.key}
-            onClick={() => setFilter(tab.key)}
+            href={buildUrl({ filter: tab.key, page: 1 })}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              filter === tab.key
+              currentFilter === tab.key
                 ? "bg-primary-600 text-white"
                 : "bg-white text-gray-600 hover:bg-gray-100"
             }`}
           >
             {tab.label}
-            <span className="ml-1.5 text-xs opacity-70">({tab.count})</span>
-          </button>
+          </Link>
         ))}
+        <span className="flex items-center text-xs text-gray-400 ml-2">
+          {totalCount}件
+        </span>
       </div>
 
       {/* Theme list */}
-      {filteredThemes.length === 0 ? (
+      {themes.length === 0 ? (
         <div className="card text-center py-12 text-gray-400">
           <p className="text-4xl mb-3">📭</p>
           <p>表示するお題がありません</p>
         </div>
       ) : (
         <div className="space-y-3">
-          {filteredThemes.map((theme) => {
+          {themes.map((theme) => {
             const isOwnPost = theme.authorId === currentUserId;
             const canViewDetail = isOwnPost || canViewOthers;
             const canDelete = isOwnPost || canDeleteOthers;
@@ -206,6 +221,39 @@ export function ThemeList({
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-2 mt-6">
+          <Link
+            href={buildUrl({ page: currentPage - 1 })}
+            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+              currentPage <= 1
+                ? "bg-gray-100 text-gray-300 pointer-events-none"
+                : "bg-white text-gray-600 hover:bg-gray-100"
+            }`}
+            aria-disabled={currentPage <= 1}
+            tabIndex={currentPage <= 1 ? -1 : undefined}
+          >
+            ← 前へ
+          </Link>
+          <span className="text-sm text-gray-600 px-3">
+            {currentPage} / {totalPages} ページ
+          </span>
+          <Link
+            href={buildUrl({ page: currentPage + 1 })}
+            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+              currentPage >= totalPages
+                ? "bg-gray-100 text-gray-300 pointer-events-none"
+                : "bg-white text-gray-600 hover:bg-gray-100"
+            }`}
+            aria-disabled={currentPage >= totalPages}
+            tabIndex={currentPage >= totalPages ? -1 : undefined}
+          >
+            次へ →
+          </Link>
         </div>
       )}
 

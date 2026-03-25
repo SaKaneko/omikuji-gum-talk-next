@@ -72,6 +72,13 @@ async function main() {
     },
   });
 
+  // Create default system settings
+  await prisma.systemSetting.upsert({
+    where: { key: "themes_per_page" },
+    update: {},
+    create: { key: "themes_per_page", value: "20" },
+  });
+
   console.log("Seed completed successfully.");
   console.log(`Admin role: ${adminRole.id}`);
   console.log(`General role: ${generalRole.id}`);

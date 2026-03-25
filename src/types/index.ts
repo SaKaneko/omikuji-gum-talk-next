@@ -63,3 +63,11 @@ export interface CommentWithAuthor {
   } | null;
   createdAt: Date;
 }
+
+export interface PaginatedThemes {
+  themes: ThemeWithAuthor[];
+  totalCount: number;
+  page: number;
+  perPage: number;
+  totalPages: number;
+}

@@ -123,3 +123,55 @@ export async function updateProfile(
   revalidatePath("/");
   return { success: true };
 }
+
+const SYSTEM_SETTING_DEFAULTS: Record<string, string> = {
+  themes_per_page: "20",
+};
+
+export async function getSystemSettings(): Promise<Record<string, string>> {
+  const settings = await prisma.systemSetting.findMany();
+  const result = { ...SYSTEM_SETTING_DEFAULTS };
+  for (const s of settings) {
+    result[s.key] = s.value;
+  }
+  return result;
+}
+
+export async function getThemesPerPage(): Promise<number> {
+  const setting = await prisma.systemSetting.findUnique({
+    where: { key: "themes_per_page" },
+  });
+  const value = parseInt(setting?.value ?? SYSTEM_SETTING_DEFAULTS.themes_per_page, 10);
+  return value > 0 ? value : 20;
+}
+
+export async function updateSystemSetting(
+  key: string,
+  value: string
+): Promise<ActionResult> {
+  const sessionUser = await getCurrentUser();
+  if (!sessionUser || sessionUser.roleName !== "admin") {
+    return { success: false, error: "管理者権限が必要です。" };
+  }
+
+  if (!(key in SYSTEM_SETTING_DEFAULTS)) {
+    return { success: false, error: "不明な設定キーです。" };
+  }
+
+  if (key === "themes_per_page") {
+    const num = parseInt(value, 10);
+    if (isNaN(num) || num <= 0) {
+      return { success: false, error: "表示件数は正の整数で指定してください。" };
+    }
+  }
+
+  await prisma.systemSetting.upsert({
+    where: { key },
+    update: { value },
+    create: { key, value },
+  });
+
+  revalidatePath("/themes");
+  revalidatePath("/admin");
+  return { success: true };
+}
