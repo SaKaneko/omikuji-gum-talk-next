@@ -165,9 +165,9 @@ export function ThemeList({
                         className="text-xs px-3 py-1 rounded-md bg-gray-50 text-gray-600 hover:bg-gray-100 transition-colors relative"
                       >
                         💬 コメント
-                        {theme._count.comments > 0 && (
+                        {(theme._count?.comments ?? 0) > 0 && (
                           <span className="ml-1 inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-primary-100 text-primary-700">
-                            {theme._count.comments}
+                            {theme._count?.comments}
                           </span>
                         )}
                       </button>
@@ -224,7 +224,7 @@ export function ThemeList({
           themeSubject={commentingTheme.subject}
           currentUserId={currentUserId}
           canDeleteOthers={canDeleteOthers}
-          commentCount={commentingTheme._count.comments}
+          commentCount={commentingTheme._count?.comments ?? 0}
           onClose={() => setCommentingThemeId(null)}
         />
       )}
