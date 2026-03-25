@@ -238,7 +238,7 @@ Next.js App Router の機能を活用し、クライアントからの操作は 
   - 入力: お題ID、コメント本文（Markdown）
   - 認証: ログイン済みユーザーのみ
   - 処理: 認証チェック → 対象お題取得 → ステータスが `IN_PROGRESS` または `COMPLETED` であることを確認 → コメント本文の空文字チェック → DB保存
-  - 戻り値: `{ success: boolean, comment?: Comment, error?: string }`
+  - 戻り値: `{ success: boolean, error?: string }`
 - `deleteComment(commentId)`: コメントを削除
   - 認証: ログイン済みユーザーのみ
   - 処理: 認証チェック → コメント取得 → 自分のコメントまたは `delete_others_posts` 権限を持つユーザーであることを確認 → DB削除
