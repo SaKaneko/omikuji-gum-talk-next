@@ -106,9 +106,7 @@ export function ThemeList({
             return (
               <div
                 key={theme.id}
-                className={`card animate-slide-up ${
-                  theme.status === "COMPLETED" ? "opacity-60" : ""
-                }`}
+                className="card animate-slide-up"
               >
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">
