@@ -427,6 +427,9 @@ export async function getThemesPaginated(
   perPage: number,
   statusFilter?: string
 ): Promise<PaginatedThemes> {
+  const clampedPerPage = Math.max(1, Math.min(perPage, 100));
+  const clampedPage = Math.max(1, Math.floor(page));
+
   const where: Prisma.ThemeWhereInput = {};
   if (statusFilter && statusFilter !== "all") {
     const statusMap: Record<string, ThemeStatus> = {
@@ -458,8 +461,8 @@ export async function getThemesPaginated(
         },
       },
       orderBy: { createdAt: "desc" },
-      skip: (page - 1) * perPage,
-      take: perPage,
+      skip: (clampedPage - 1) * clampedPerPage,
+      take: clampedPerPage,
     }),
     prisma.theme.count({ where }),
   ]);
@@ -467,9 +470,9 @@ export async function getThemesPaginated(
   return {
     themes: themes as ThemeWithAuthor[],
     totalCount,
-    page,
-    perPage,
-    totalPages: Math.max(1, Math.ceil(totalCount / perPage)),
+    page: clampedPage,
+    perPage: clampedPerPage,
+    totalPages: Math.max(1, Math.ceil(totalCount / clampedPerPage)),
   };
 }
 
