@@ -35,6 +35,7 @@ export function AdminPanel({ users, themes, apiKeys, systemSettings }: AdminPane
   const [generatedKey, setGeneratedKey] = useState<string | null>(null);
   const [apiKeyError, setApiKeyError] = useState<string | null>(null);
   const [settingsMessage, setSettingsMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [themeStatusError, setThemeStatusError] = useState<string | null>(null);
 
   const handleRoleChange = (userId: string, newRole: string) => {
     startTransition(async () => {
@@ -59,8 +60,23 @@ export function AdminPanel({ users, themes, apiKeys, systemSettings }: AdminPane
 
   const handleToggleThemeStatus = (themeId: string, currentStatus: ThemeStatus) => {
     const newStatus: ThemeStatus = currentStatus === "COMPLETED" ? "PENDING" : "COMPLETED";
+    setThemeStatusError(null);
     startTransition(async () => {
-      await updateThemeStatus(themeId, newStatus);
+      const result = await updateThemeStatus(themeId, newStatus);
+      if (!result.success) {
+        setThemeStatusError(result.error ?? "エラーが発生しました。");
+      }
+    });
+  };
+
+  const handleStartPresentation = (themeId: string) => {
+    if (!confirm("このお題を発表中にしますか？")) return;
+    setThemeStatusError(null);
+    startTransition(async () => {
+      const result = await updateThemeStatus(themeId, "IN_PROGRESS");
+      if (!result.success) {
+        setThemeStatusError(result.error ?? "エラーが発生しました。");
+      }
     });
   };
 
@@ -219,6 +235,11 @@ export function AdminPanel({ users, themes, apiKeys, systemSettings }: AdminPane
               </div>
             );
           })()}
+          {themeStatusError && (
+            <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-sm text-red-700">
+              {themeStatusError}
+            </div>
+          )}
           {themes.length === 0 ? (
             <div className="card text-center py-8 text-gray-400">
               お題がありません
@@ -266,6 +287,15 @@ export function AdminPanel({ users, themes, apiKeys, systemSettings }: AdminPane
                     </p>
                   </div>
                   <div className="flex flex-col gap-1 shrink-0">
+                    {theme.status === "PENDING" && (
+                      <button
+                        onClick={() => handleStartPresentation(theme.id)}
+                        disabled={isPending}
+                        className="text-xs px-3 py-1 rounded-md bg-yellow-50 text-yellow-700 hover:bg-yellow-100 transition-colors disabled:opacity-50"
+                      >
+                        🎙️ 発表中にする
+                      </button>
+                    )}
                     <button
                       onClick={() =>
                         handleToggleThemeStatus(theme.id, theme.status)

@@ -157,12 +157,38 @@ export async function updateThemeStatus(
     return { success: false, error: "管理者のみ実行できます。" };
   }
 
-  await prisma.theme.update({
-    where: { id },
-    data: { status },
-  });
+  const theme = await prisma.theme.findUnique({ where: { id } });
+  if (!theme) {
+    return { success: false, error: "お題が見つかりません。" };
+  }
+
+  // PENDING → IN_PROGRESS: check no other theme is already IN_PROGRESS, set presentedAt
+  if (status === "IN_PROGRESS" && theme.status === "PENDING") {
+    const existing = await prisma.theme.findFirst({
+      where: { status: "IN_PROGRESS" },
+    });
+    if (existing) {
+      return { success: false, error: "既に発表中のお題があります。先に現在の発表を完了してください。" };
+    }
+    await prisma.theme.update({
+      where: { id },
+      data: { status: "IN_PROGRESS", presentedAt: new Date() },
+    });
+  } else if (status === "PENDING" && theme.status === "COMPLETED") {
+    // COMPLETED → PENDING: reset presentedAt and actualDuration
+    await prisma.theme.update({
+      where: { id },
+      data: { status: "PENDING", presentedAt: null, actualDuration: null },
+    });
+  } else {
+    await prisma.theme.update({
+      where: { id },
+      data: { status },
+    });
+  }
 
   revalidatePath("/themes");
+  revalidatePath("/draw");
   return { success: true };
 }
 

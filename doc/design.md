@@ -215,6 +215,10 @@ Next.js App Router の機能を活用し、クライアントからの操作は 
   - 戻り値: `{ success: boolean, error?: string }`
 - `deleteTheme(id)`: お題削除
 - `updateThemeStatus(id, status)`: お題ステータス変更
+  - 管理者のみ実行可能
+  - `PENDING` → `IN_PROGRESS` への変更時: 既に `IN_PROGRESS` のお題が存在しないことを確認し、`presentedAt` に現在日時を記録する。くじ引きを経由せず特定のお題を直接発表中にする場合に使用
+  - `COMPLETED` → `PENDING` への変更時: `presentedAt` と `actualDuration` を `null` にリセットする
+  - `PENDING` → `COMPLETED`、その他のステータス変更は従来通り
 - `drawOmikuji(filters)`: **排他制御**を実行しお題をランダムに抽選
 - `drawOldestTheme(filters)`: **排他制御**を実行し一番古いお題を選出・取得
 - `passTheme(id)`: パス (引き直し) - お題を未消化に戻す
@@ -397,6 +401,7 @@ src/ (またはルート直下)
 | 閲覧(自)         |   ○   |    ○    |                                    |
 | 閲覧(他・詳細)   |   ○   |    ☓    | 他人は件名のみ                     |
 | くじ引き         |   ○   |    ☓    | 権限設定による                     |
+| 発表中にする     |   ○   |    ☆    | 未消化のお題を直接発表中に変更     |
 | 削除(他)         |   ○   |    ☓    |                                    |
 | 設定変更(自)     |   ○   |    ○    | 自身の設定のみ                     |
 | APIキー管理      |   ○   |    ☓    | adminのみ発行可                    |
