@@ -51,6 +51,7 @@ export function ThemeList({
   const [isPending, startTransition] = useTransition();
   const [editingTheme, setEditingTheme] = useState<ThemeWithAuthor | null>(null);
   const [commentingThemeId, setCommentingThemeId] = useState<string | null>(null);
+  const [statusError, setStatusError] = useState<string | null>(null);
   const commentingTheme = commentingThemeId
     ? themes.find((t) => t.id === commentingThemeId) ?? null
     : null;
@@ -64,8 +65,23 @@ export function ThemeList({
 
   const handleToggleStatus = (id: string, currentStatus: ThemeStatus) => {
     const newStatus: ThemeStatus = currentStatus === "COMPLETED" ? "PENDING" : "COMPLETED";
+    setStatusError(null);
     startTransition(async () => {
-      await updateThemeStatus(id, newStatus);
+      const result = await updateThemeStatus(id, newStatus);
+      if (!result.success) {
+        setStatusError(result.error ?? "エラーが発生しました。");
+      }
+    });
+  };
+
+  const handleStartPresentation = (id: string) => {
+    if (!confirm("このお題を発表中にしますか？")) return;
+    setStatusError(null);
+    startTransition(async () => {
+      const result = await updateThemeStatus(id, "IN_PROGRESS");
+      if (!result.success) {
+        setStatusError(result.error ?? "エラーが発生しました。");
+      }
     });
   };
 
@@ -106,6 +122,13 @@ export function ThemeList({
           {totalCount}件
         </span>
       </div>
+
+      {/* Status error message */}
+      {statusError && (
+        <div className="mb-4 p-3 rounded-lg bg-red-50 border border-red-200 text-sm text-red-700">
+          {statusError}
+        </div>
+      )}
 
       {/* Theme list */}
       {themes.length === 0 ? (
@@ -194,6 +217,15 @@ export function ThemeList({
                         className="text-xs px-3 py-1 rounded-md bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors disabled:opacity-50"
                       >
                         編集
+                      </button>
+                    )}
+                    {isAdmin && theme.status === "PENDING" && (
+                      <button
+                        onClick={() => handleStartPresentation(theme.id)}
+                        disabled={isPending}
+                        className="text-xs px-3 py-1 rounded-md bg-yellow-50 text-yellow-700 hover:bg-yellow-100 transition-colors disabled:opacity-50"
+                      >
+                        🎙️ 発表中にする
                       </button>
                     )}
                     {isAdmin && (
